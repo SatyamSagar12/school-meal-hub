@@ -222,9 +222,17 @@ export const attendanceRangeQuery = (start: string, end: string) =>
 export const expenseByDateQuery = (date: string) =>
   queryOptions({
     queryKey: ["expense", date],
-    queryFn: async () =>
-      unwrap(await supabase.from("daily_expenses").select("*").eq("expense_date", date).maybeSingle()),
+    queryFn: async (): Promise<DailyExpense | null> => {
+      const { data, error } = await supabase
+        .from("daily_expenses")
+        .select("*")
+        .eq("expense_date", date)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
   });
+
 
 export const expensesRangeQuery = (start: string, end: string) =>
   queryOptions({
