@@ -114,7 +114,7 @@ function StudentsPage() {
   const filters = { search, classFilter, sectionFilter, statusFilter, page, pageSize: PAGE_SIZE, sortBy, sortAsc };
   const { data, isLoading } = useQuery(studentsQuery(filters));
 
-  const form = useForm<StudentFormValues>({
+  const form = useForm<StudentFormValues, unknown, StudentPayload>({
     resolver: zodResolver(studentSchema),
     defaultValues: emptyStudent,
   });
@@ -437,7 +437,7 @@ function StudentsPage() {
           </DialogHeader>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((v) => saveMutation.mutate(studentSchema.parse(v)))}
+              onSubmit={form.handleSubmit((v) => saveMutation.mutate(v))}
               className="grid gap-4 sm:grid-cols-2"
             >
               <FormField control={form.control} name="admission_no" render={({ field }) => (
