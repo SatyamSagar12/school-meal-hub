@@ -56,7 +56,7 @@ import {
 } from "@/lib/api";
 import { downloadTemplate, exportExcel, readSheet } from "@/lib/export";
 import type { Student } from "@/lib/mdm";
-import { studentSchema, type StudentFormValues, type StudentPayload } from "@/lib/schemas";
+import { studentSchema, toStudentRow, type StudentFormValues, type StudentPayload } from "@/lib/schemas";
 
 export const Route = createFileRoute("/_authenticated/students")({
   head: () => ({
@@ -114,8 +114,7 @@ function StudentsPage() {
   const filters = { search, classFilter, sectionFilter, statusFilter, page, pageSize: PAGE_SIZE, sortBy, sortAsc };
   const { data, isLoading } = useQuery(studentsQuery(filters));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const form = useForm<StudentFormValues, any, StudentPayload>({
+  const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
     defaultValues: emptyStudent,
   });
@@ -125,10 +124,10 @@ function StudentsPage() {
   const saveMutation = useMutation({
     mutationFn: async (values: StudentPayload) => {
       if (editing) {
-        await updateStudent(editing.id, values);
+        await updateStudent(editing.id, toStudentRow(values));
         await logAudit("update", "students", editing.id, { name: values.name });
       } else {
-        await createStudent(values);
+        await createStudent(toStudentRow(values));
         await logAudit("create", "students", undefined, { name: values.name });
       }
     },
@@ -189,7 +188,7 @@ function StudentsPage() {
       });
       setImportErrors(errors);
       if (!valid.length) throw new Error("No valid rows found. Check the errors listed below.");
-      await bulkInsertStudents(valid);
+      await bulkInsertStudents(valid.map(toStudentRow));
       await logAudit("import", "students", undefined, { count: valid.length });
       return { imported: valid.length, skipped: errors.length };
     },

@@ -9,8 +9,7 @@ const optionalText = (max: number) =>
     .trim()
     .max(max, `Must be ${max} characters or fewer`)
     .optional()
-    .or(z.literal(""))
-    .transform((v) => (v ? v : null));
+    .or(z.literal(""));
 
 export const studentSchema = z.object({
   admission_no: z.string().trim().min(1, "Admission number is required").max(30),
@@ -24,8 +23,7 @@ export const studentSchema = z.object({
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid date")
     .optional()
-    .or(z.literal(""))
-    .transform((v) => (v ? v : null)),
+    .or(z.literal("")),
   class_name: z.string().trim().min(1, "Class is required").max(20),
   section: z.string().trim().min(1, "Section is required").max(10),
   mobile: z
@@ -33,14 +31,32 @@ export const studentSchema = z.object({
     .trim()
     .regex(/^[0-9+\-\s]{6,15}$/, "Enter a valid mobile number")
     .optional()
-    .or(z.literal(""))
-    .transform((v) => (v ? v : null)),
+    .or(z.literal("")),
   address: optionalText(300),
   status: statusEnum,
 });
 
-export type StudentFormValues = z.input<typeof studentSchema>;
-export type StudentPayload = z.output<typeof studentSchema>;
+export type StudentFormValues = z.output<typeof studentSchema>;
+export type StudentPayload = StudentFormValues;
+
+/** Convert empty optional strings to nulls for the database. */
+export function toStudentRow(v: StudentFormValues) {
+  const blank = (x?: string | null) => (x && x.trim() ? x.trim() : null);
+  return {
+    admission_no: v.admission_no,
+    name: v.name,
+    class_name: v.class_name,
+    section: v.section,
+    gender: v.gender,
+    status: v.status,
+    roll_no: blank(v.roll_no),
+    father_name: blank(v.father_name),
+    mother_name: blank(v.mother_name),
+    dob: blank(v.dob),
+    mobile: blank(v.mobile),
+    address: blank(v.address),
+  };
+}
 
 export const expenseSchema = z.object({
   dal_rate: z.coerce.number().min(0, "Cannot be negative").max(10000),
