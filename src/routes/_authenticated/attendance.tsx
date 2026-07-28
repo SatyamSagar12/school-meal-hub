@@ -43,13 +43,13 @@ function AttendancePage() {
 
   const { data: settings } = useQuery(settingsQuery());
   const { data: lists } = useQuery(classListQuery());
-  const { data: roster, isLoading } = useQuery(attendanceRosterQuery(date));
+  const { data: roster, isLoading } = useQuery(attendanceRosterQuery(date, classFilter, "all"));
 
   useEffect(() => {
     if (!roster) return;
     const next: Marks = {};
     for (const s of roster.students) {
-      next[s.id] = roster.marks[s.id] ?? "present";
+      next[s.id] = roster.existing.get(s.id) ?? "present";
     }
     setMarks(next);
   }, [roster]);
@@ -58,28 +58,26 @@ function AttendancePage() {
     const q = search.trim().toLowerCase();
     return (roster?.students ?? []).filter(
       (s) =>
-        (classFilter === "all" || s.class_name === classFilter) &&
         (!q ||
           s.name.toLowerCase().includes(q) ||
           s.admission_no.toLowerCase().includes(q) ||
           (s.roll_no ?? "").toLowerCase().includes(q)),
     );
-  }, [roster, classFilter, search]);
+  }, [roster, search]);
 
   const present = Object.values(marks).filter((m) => m === "present").length;
   const absent = Object.values(marks).filter((m) => m === "absent").length;
   const meal = computeMeal(present, toRates(settings));
-  const alreadySaved = Object.keys(roster?.marks ?? {}).length > 0;
+  const alreadySaved = roster?.alreadySaved ?? false;
 
   const save = useMutation({
     mutationFn: async () => {
       const rows = (roster?.students ?? []).map((s) => ({
-        student_id: s.id,
-        attendance_date: date,
-        status: marks[s.id] ?? "present",
+        student: s,
+        status: marks[s.id] ?? ("present" as const),
       }));
       if (!rows.length) throw new Error("There are no active students to mark");
-      await saveAttendance(rows);
+      await saveAttendance(date, rows);
       await logAudit("save", "attendance", undefined, { date, present, absent });
     },
     onSuccess: () => {

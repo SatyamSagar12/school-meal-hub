@@ -114,7 +114,8 @@ function StudentsPage() {
   const filters = { search, classFilter, sectionFilter, statusFilter, page, pageSize: PAGE_SIZE, sortBy, sortAsc };
   const { data, isLoading } = useQuery(studentsQuery(filters));
 
-  const form = useForm<StudentFormValues, unknown, StudentPayload>({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const form = useForm<StudentFormValues, any, StudentPayload>({
     resolver: zodResolver(studentSchema),
     defaultValues: emptyStudent,
   });
