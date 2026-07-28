@@ -9,10 +9,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { attendanceRosterQuery, classListQuery, logAudit, saveAttendance, settingsQuery } from "@/lib/api";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  attendanceRosterQuery,
+  classListQuery,
+  logAudit,
+  saveAttendance,
+  settingsQuery,
+} from "@/lib/api";
 import { computeMeal, kg, prettyDate, todayISO, toRates } from "@/lib/mdm";
 
 export const Route = createFileRoute("/_authenticated/attendance")({
@@ -25,7 +44,10 @@ export const Route = createFileRoute("/_authenticated/attendance")({
           "Mark daily present and absent students by class and instantly see the rice, dal and vegetable quantities required.",
       },
       { property: "og:title", content: "Attendance — Mid-Day Meal Manager" },
-      { property: "og:description", content: "Daily attendance marking with live meal quantity calculation." },
+      {
+        property: "og:description",
+        content: "Daily attendance marking with live meal quantity calculation.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -58,10 +80,10 @@ function AttendancePage() {
     const q = search.trim().toLowerCase();
     return (roster?.students ?? []).filter(
       (s) =>
-        (!q ||
-          s.name.toLowerCase().includes(q) ||
-          s.admission_no.toLowerCase().includes(q) ||
-          (s.roll_no ?? "").toLowerCase().includes(q)),
+        !q ||
+        s.name.toLowerCase().includes(q) ||
+        s.admission_no.toLowerCase().includes(q) ||
+        (s.roll_no ?? "").toLowerCase().includes(q),
     );
   }, [roster, search]);
 
@@ -112,23 +134,50 @@ function AttendancePage() {
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Present" value={present} icon={Check} tone="success" loading={isLoading} />
         <StatCard label="Absent" value={absent} icon={UserX} tone="danger" loading={isLoading} />
-        <StatCard label="Rice required" value={kg(meal.riceKg)} icon={CalendarDays} tone="info" hint={`${meal.riceG} g`} />
-        <StatCard label="Dal + vegetables" value={`${kg(meal.dalKg)} + ${kg(meal.vegKg)}`} icon={CalendarDays} />
+        <StatCard
+          label="Rice required"
+          value={kg(meal.riceKg)}
+          icon={CalendarDays}
+          tone="info"
+          hint={`${meal.riceG} g`}
+        />
+        <StatCard
+          label="Dal + vegetables"
+          value={`${kg(meal.dalKg)} + ${kg(meal.vegKg)}`}
+          icon={CalendarDays}
+        />
       </section>
 
       <Card className="my-4 gap-3 p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor="att-date">Date</label>
-            <Input id="att-date" type="date" value={date} max={todayISO()} onChange={(e) => setDate(e.target.value)} />
+            <label
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+              htmlFor="att-date"
+            >
+              Date
+            </label>
+            <Input
+              id="att-date"
+              type="date"
+              value={date}
+              max={todayISO()}
+              onChange={(e) => setDate(e.target.value)}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Class</label>
             <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All classes</SelectItem>
-                {lists?.classes.map((c) => <SelectItem key={c} value={c}>Class {c}</SelectItem>)}
+                {lists?.classes.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    Class {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -136,14 +185,27 @@ function AttendancePage() {
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Search</label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Name, roll or admission number" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input
+                className="pl-9"
+                placeholder="Name, roll or admission number"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => setAllVisible("present")}>Mark all present</Button>
-          <Button size="sm" variant="outline" onClick={() => setAllVisible("absent")}>Mark all absent</Button>
-          {alreadySaved && <Badge variant="secondary" className="self-center">Already saved for this date</Badge>}
+          <Button size="sm" variant="outline" onClick={() => setAllVisible("present")}>
+            Mark all present
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setAllVisible("absent")}>
+            Mark all absent
+          </Button>
+          {alreadySaved && (
+            <Badge variant="secondary" className="self-center">
+              Already saved for this date
+            </Badge>
+          )}
         </div>
       </Card>
 
@@ -162,11 +224,18 @@ function AttendancePage() {
             <TableBody>
               {isLoading &&
                 Array.from({ length: 8 }).map((_, i) => (
-                  <TableRow key={i}><TableCell colSpan={5}><Skeleton className="h-6 w-full" /></TableCell></TableRow>
+                  <TableRow key={i}>
+                    <TableCell colSpan={5}>
+                      <Skeleton className="h-6 w-full" />
+                    </TableCell>
+                  </TableRow>
                 ))}
               {!isLoading && !visible.length && (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="py-10 text-center text-sm text-muted-foreground"
+                  >
                     No active students match these filters.
                   </TableCell>
                 </TableRow>
@@ -174,10 +243,15 @@ function AttendancePage() {
               {visible.map((s) => {
                 const status = marks[s.id] ?? "present";
                 return (
-                  <TableRow key={s.id} className={status === "absent" ? "bg-destructive/5" : undefined}>
+                  <TableRow
+                    key={s.id}
+                    className={status === "absent" ? "bg-destructive/5" : undefined}
+                  >
                     <TableCell>{s.roll_no ?? "—"}</TableCell>
                     <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell>{s.class_name}-{s.section}</TableCell>
+                    <TableCell>
+                      {s.class_name}-{s.section}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{s.admission_no}</TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">

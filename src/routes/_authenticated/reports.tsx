@@ -9,7 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { attendanceRangeQuery, expensesRangeQuery, settingsQuery } from "@/lib/api";
 import { exportExcel, exportPdf } from "@/lib/export";
@@ -25,7 +32,10 @@ export const Route = createFileRoute("/_authenticated/reports")({
           "Generate daily, monthly and custom-range mid-day meal reports and export them to Excel or PDF.",
       },
       { property: "og:title", content: "Reports — Mid-Day Meal Manager" },
-      { property: "og:description", content: "Attendance, consumption and expenditure reports with one-click export." },
+      {
+        property: "og:description",
+        content: "Attendance, consumption and expenditure reports with one-click export.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -173,36 +183,92 @@ function ReportsPage() {
 
         {mode === "daily" && (
           <div className="max-w-xs">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor="r-day">Date</label>
-            <Input id="r-day" type="date" max={todayISO()} value={day} onChange={(e) => setDay(e.target.value)} />
+            <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor="r-day">
+              Date
+            </label>
+            <Input
+              id="r-day"
+              type="date"
+              max={todayISO()}
+              value={day}
+              onChange={(e) => setDay(e.target.value)}
+            />
           </div>
         )}
 
         {mode === "monthly" && (
           <div className="max-w-xs">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor="r-month">Month</label>
-            <Input id="r-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
+            <label
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+              htmlFor="r-month"
+            >
+              Month
+            </label>
+            <Input
+              id="r-month"
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+            />
           </div>
         )}
 
         {mode === "custom" && (
           <div className="grid max-w-lg gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor="r-from">From</label>
-              <Input id="r-from" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
+              <label
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+                htmlFor="r-from"
+              >
+                From
+              </label>
+              <Input
+                id="r-from"
+                type="date"
+                value={from}
+                max={to}
+                onChange={(e) => setFrom(e.target.value)}
+              />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor="r-to">To</label>
-              <Input id="r-to" type="date" value={to} min={from} max={todayISO()} onChange={(e) => setTo(e.target.value)} />
+              <label
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+                htmlFor="r-to"
+              >
+                To
+              </label>
+              <Input
+                id="r-to"
+                type="date"
+                value={to}
+                min={from}
+                max={todayISO()}
+                onChange={(e) => setTo(e.target.value)}
+              />
             </div>
           </div>
         )}
       </Card>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Meals served" value={totals.present} hint={`${attendancePct}% attendance`} loading={isLoading} />
-        <StatCard label="Rice consumed" value={`${round3(totals.rice)} kg`} tone="info" loading={isLoading} />
-        <StatCard label="Total expenditure" value={inr(totals.expense)} loading={isLoading} hint={`Budget ${inr(totals.budget)}`} />
+        <StatCard
+          label="Meals served"
+          value={totals.present}
+          hint={`${attendancePct}% attendance`}
+          loading={isLoading}
+        />
+        <StatCard
+          label="Rice consumed"
+          value={`${round3(totals.rice)} kg`}
+          tone="info"
+          loading={isLoading}
+        />
+        <StatCard
+          label="Total expenditure"
+          value={inr(totals.expense)}
+          loading={isLoading}
+          hint={`Budget ${inr(totals.budget)}`}
+        />
         <StatCard
           label="Credits saved"
           value={inr(totals.credits)}
@@ -217,18 +283,27 @@ function ReportsPage() {
             <TableHeader>
               <TableRow>
                 {columns.map((c) => (
-                  <TableHead key={c} className={c === "Date" ? "" : "text-right"}>{c}</TableHead>
+                  <TableHead key={c} className={c === "Date" ? "" : "text-right"}>
+                    {c}
+                  </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading &&
                 Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow key={i}><TableCell colSpan={columns.length}><Skeleton className="h-6 w-full" /></TableCell></TableRow>
+                  <TableRow key={i}>
+                    <TableCell colSpan={columns.length}>
+                      <Skeleton className="h-6 w-full" />
+                    </TableCell>
+                  </TableRow>
                 ))}
               {!isLoading && !tableRows.length && (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell
+                    colSpan={columns.length}
+                    className="py-10 text-center text-sm text-muted-foreground"
+                  >
                     No expenditure records in this period.
                   </TableCell>
                 </TableRow>
@@ -236,7 +311,10 @@ function ReportsPage() {
               {tableRows.map((r) => (
                 <TableRow key={String(r[0])}>
                   {r.map((cell, i) => (
-                    <TableCell key={i} className={i === 0 ? "font-medium" : "text-right tabular-nums"}>
+                    <TableCell
+                      key={i}
+                      className={i === 0 ? "font-medium" : "text-right tabular-nums"}
+                    >
                       {cell}
                     </TableCell>
                   ))}

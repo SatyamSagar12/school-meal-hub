@@ -233,7 +233,6 @@ export const expenseByDateQuery = (date: string) =>
     },
   });
 
-
 export const expensesRangeQuery = (start: string, end: string) =>
   queryOptions({
     queryKey: ["expenses", start, end],
@@ -268,7 +267,12 @@ export async function deleteExpense(date: string) {
 
 /* -------------------------------- audit --------------------------------- */
 
-export async function logAudit(action: string, entity: string, entityId?: string, details?: object) {
+export async function logAudit(
+  action: string,
+  entity: string,
+  entityId?: string,
+  details?: object,
+) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return;
   await supabase.from("audit_logs").insert({
@@ -284,5 +288,11 @@ export const auditQuery = () =>
   queryOptions({
     queryKey: ["audit"],
     queryFn: async () =>
-      unwrap(await supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100)),
+      unwrap(
+        await supabase
+          .from("audit_logs")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(100),
+      ),
   });

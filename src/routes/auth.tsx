@@ -123,7 +123,12 @@ function AuthPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" autoComplete="email" placeholder="you@school.edu" {...field} />
+                        <Input
+                          type="email"
+                          autoComplete="email"
+                          placeholder="you@school.edu"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -132,7 +137,12 @@ function AuthPage() {
                 <Button type="submit" className="w-full" disabled={busy}>
                   {busy ? "Sending…" : "Send reset link"}
                 </Button>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setForgot(false)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setForgot(false)}
+                >
                   Back to sign in
                 </Button>
               </form>

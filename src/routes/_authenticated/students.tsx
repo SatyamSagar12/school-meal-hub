@@ -37,11 +37,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
   allStudentsQuery,
@@ -56,7 +76,12 @@ import {
 } from "@/lib/api";
 import { downloadTemplate, exportExcel, readSheet } from "@/lib/export";
 import type { Student } from "@/lib/mdm";
-import { studentSchema, toStudentRow, type StudentFormValues, type StudentPayload } from "@/lib/schemas";
+import {
+  studentSchema,
+  toStudentRow,
+  type StudentFormValues,
+  type StudentPayload,
+} from "@/lib/schemas";
 
 export const Route = createFileRoute("/_authenticated/students")({
   head: () => ({
@@ -68,7 +93,10 @@ export const Route = createFileRoute("/_authenticated/students")({
           "Add, edit, search, filter, import and export the complete student register for your school.",
       },
       { property: "og:title", content: "Students — Mid-Day Meal Manager" },
-      { property: "og:description", content: "Complete student register with Excel import and export." },
+      {
+        property: "og:description",
+        content: "Complete student register with Excel import and export.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -111,7 +139,16 @@ function StudentsPage() {
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const filters = { search, classFilter, sectionFilter, statusFilter, page, pageSize: PAGE_SIZE, sortBy, sortAsc };
+  const filters = {
+    search,
+    classFilter,
+    sectionFilter,
+    statusFilter,
+    page,
+    pageSize: PAGE_SIZE,
+    sortBy,
+    sortAsc,
+  };
   const { data, isLoading } = useQuery(studentsQuery(filters));
 
   const form = useForm<StudentFormValues>({
@@ -176,7 +213,9 @@ function StudentsPage() {
           gender: ["male", "female", "other"].includes(String(record.gender).toLowerCase())
             ? String(record.gender).toLowerCase()
             : "male",
-          status: ["active", "inactive", "transferred"].includes(String(record.status).toLowerCase())
+          status: ["active", "inactive", "transferred"].includes(
+            String(record.status).toLowerCase(),
+          )
             ? String(record.status).toLowerCase()
             : "active",
         });
@@ -258,7 +297,10 @@ function StudentsPage() {
 
   const SortHead = ({ column, label }: { column: string; label: string }) => (
     <TableHead>
-      <button className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort(column)}>
+      <button
+        className="inline-flex items-center gap-1 hover:text-foreground"
+        onClick={() => toggleSort(column)}
+      >
         {label}
         {sortBy === column &&
           (sortAsc ? <ArrowUpAZ className="size-3.5" /> : <ArrowDownAZ className="size-3.5" />)}
@@ -276,8 +318,13 @@ function StudentsPage() {
             <Button variant="outline" onClick={downloadTemplate}>
               <FileSpreadsheet className="mr-1.5 size-4" /> Template
             </Button>
-            <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={importMutation.isPending}>
-              <Upload className="mr-1.5 size-4" /> {importMutation.isPending ? "Importing…" : "Import"}
+            <Button
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={importMutation.isPending}
+            >
+              <Upload className="mr-1.5 size-4" />{" "}
+              {importMutation.isPending ? "Importing…" : "Import"}
             </Button>
             <input
               ref={fileRef}
@@ -310,7 +357,12 @@ function StudentsPage() {
               <li key={e}>{e}</li>
             ))}
           </ul>
-          <Button variant="ghost" size="sm" className="mt-2 self-start" onClick={() => setImportErrors([])}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 self-start"
+            onClick={() => setImportErrors([])}
+          >
             Dismiss
           </Button>
         </Card>
@@ -330,22 +382,54 @@ function StudentsPage() {
               }}
             />
           </div>
-          <Select value={classFilter} onValueChange={(v) => { setClassFilter(v); setPage(1); }}>
-            <SelectTrigger><SelectValue placeholder="Class" /></SelectTrigger>
+          <Select
+            value={classFilter}
+            onValueChange={(v) => {
+              setClassFilter(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Class" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All classes</SelectItem>
-              {lists?.classes.map((c) => <SelectItem key={c} value={c}>Class {c}</SelectItem>)}
+              {lists?.classes.map((c) => (
+                <SelectItem key={c} value={c}>
+                  Class {c}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={sectionFilter} onValueChange={(v) => { setSectionFilter(v); setPage(1); }}>
-            <SelectTrigger><SelectValue placeholder="Section" /></SelectTrigger>
+          <Select
+            value={sectionFilter}
+            onValueChange={(v) => {
+              setSectionFilter(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Section" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All sections</SelectItem>
-              {lists?.sections.map((s) => <SelectItem key={s} value={s}>Section {s}</SelectItem>)}
+              {lists?.sections.map((s) => (
+                <SelectItem key={s} value={s}>
+                  Section {s}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-            <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="active">Active</SelectItem>
@@ -375,12 +459,17 @@ function StudentsPage() {
               {isLoading &&
                 Array.from({ length: 6 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={8}><Skeleton className="h-6 w-full" /></TableCell>
+                    <TableCell colSpan={8}>
+                      <Skeleton className="h-6 w-full" />
+                    </TableCell>
                   </TableRow>
                 ))}
               {!isLoading && !data?.rows.length && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell
+                    colSpan={8}
+                    className="py-10 text-center text-sm text-muted-foreground"
+                  >
                     No students found. Add one or import an Excel sheet to get started.
                   </TableCell>
                 </TableRow>
@@ -391,17 +480,31 @@ function StudentsPage() {
                   <TableCell>{s.roll_no ?? "—"}</TableCell>
                   <TableCell>{s.name}</TableCell>
                   <TableCell className="hidden md:table-cell">{s.father_name ?? "—"}</TableCell>
-                  <TableCell>{s.class_name}-{s.section}</TableCell>
+                  <TableCell>
+                    {s.class_name}-{s.section}
+                  </TableCell>
                   <TableCell className="hidden lg:table-cell">{s.mobile ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={s.status === "active" ? "default" : "secondary"}>{s.status}</Badge>
+                    <Badge variant={s.status === "active" ? "default" : "secondary"}>
+                      {s.status}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openEdit(s)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Edit"
+                      onClick={() => openEdit(s)}
+                    >
                       <Pencil className="size-4" />
                     </Button>
                     {me?.isAdmin && (
-                      <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => setDeleteTarget(s)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Delete"
+                        onClick={() => setDeleteTarget(s)}
+                      >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>
                     )}
@@ -417,10 +520,20 @@ function StudentsPage() {
             Page {page} of {totalPages} · {data?.total ?? 0} students
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
               Next
             </Button>
           </div>
@@ -432,7 +545,8 @@ function StudentsPage() {
           <DialogHeader>
             <DialogTitle>{editing ? "Edit student" : "Add student"}</DialogTitle>
             <DialogDescription>
-              Records are stored securely in the school database and used for attendance and meal counts.
+              Records are stored securely in the school database and used for attendance and meal
+              counts.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -440,66 +554,184 @@ function StudentsPage() {
               onSubmit={form.handleSubmit((v) => saveMutation.mutate(v))}
               className="grid gap-4 sm:grid-cols-2"
             >
-              <FormField control={form.control} name="admission_no" render={({ field }) => (
-                <FormItem><FormLabel>Admission number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="roll_no" render={({ field }) => (
-                <FormItem><FormLabel>Roll number</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem className="sm:col-span-2"><FormLabel>Student name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="father_name" render={({ field }) => (
-                <FormItem><FormLabel>Father's name</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="mother_name" render={({ field }) => (
-                <FormItem><FormLabel>Mother's name</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="gender" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Gender</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="dob" render={({ field }) => (
-                <FormItem><FormLabel>Date of birth</FormLabel><FormControl><Input type="date" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="class_name" render={({ field }) => (
-                <FormItem><FormLabel>Class</FormLabel><FormControl><Input placeholder="5" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="section" render={({ field }) => (
-                <FormItem><FormLabel>Section</FormLabel><FormControl><Input placeholder="A" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (
-                <FormItem><FormLabel>Mobile</FormLabel><FormControl><Input inputMode="tel" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="transferred">Transferred</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="address" render={({ field }) => (
-                <FormItem className="sm:col-span-2"><FormLabel>Address</FormLabel><FormControl><Textarea rows={2} {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
-              )} />
+              <FormField
+                control={form.control}
+                name="admission_no"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Admission number</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="roll_no"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Roll number</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Student name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="father_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Father's name</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="mother_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mother's name</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gender</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dob"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date of birth</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="class_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class</FormLabel>
+                    <FormControl>
+                      <Input placeholder="5" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="section"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Section</FormLabel>
+                    <FormControl>
+                      <Input placeholder="A" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="mobile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mobile</FormLabel>
+                    <FormControl>
+                      <Input inputMode="tel" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="transferred">Transferred</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Textarea rows={2} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <DialogFooter className="sm:col-span-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={saveMutation.isPending}>
                   {saveMutation.isPending ? "Saving…" : editing ? "Save changes" : "Add student"}
                 </Button>
@@ -514,7 +746,8 @@ function StudentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the student and all their attendance records. This cannot be undone.
+              This permanently removes the student and all their attendance records. This cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

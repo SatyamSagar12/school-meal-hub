@@ -44,12 +44,19 @@ export function StatCard({
           {loading ? (
             <Skeleton className="mt-2 h-7 w-24" />
           ) : (
-            <p className={cn("mt-1.5 text-2xl font-semibold tabular-nums", toneMap[tone])}>{value}</p>
+            <p className={cn("mt-1.5 text-2xl font-semibold tabular-nums", toneMap[tone])}>
+              {value}
+            </p>
           )}
           {hint && !loading && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
         </div>
         {Icon && (
-          <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", iconTone[tone])}>
+          <span
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-xl",
+              iconTone[tone],
+            )}
+          >
             <Icon className="size-4.5" />
           </span>
         )}

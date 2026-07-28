@@ -1,6 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ClipboardCheck, LineChart, ShieldCheck, UtensilsCrossed, Wallet } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardCheck,
+  LineChart,
+  ShieldCheck,
+  UtensilsCrossed,
+  Wallet,
+} from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -81,9 +88,9 @@ function Landing() {
               Run your school's mid-day meal programme without a single register.
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground">
-              Mark attendance in seconds, let the system calculate rice, dal and vegetables, record the
-              day's expenditure and see exactly how much of the government budget you saved — every day,
-              every month, every year.
+              Mark attendance in seconds, let the system calculate rice, dal and vegetables, record
+              the day's expenditure and see exactly how much of the government budget you saved —
+              every day, every month, every year.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">

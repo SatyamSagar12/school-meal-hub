@@ -77,7 +77,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <DropdownMenuLabel className="font-normal">
                   <p className="text-sm font-medium">{me?.fullName || "Staff member"}</p>
                   <p className="truncate text-xs text-muted-foreground">{me?.email}</p>
-                  <p className="mt-1 text-xs text-primary">{me?.isAdmin ? "Administrator" : "Staff"}</p>
+                  <p className="mt-1 text-xs text-primary">
+                    {me?.isAdmin ? "Administrator" : "Staff"}
+                  </p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate({ to: "/settings" })}>

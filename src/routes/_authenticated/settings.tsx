@@ -9,7 +9,15 @@ import { PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { auditQuery, logAudit, meQuery, settingsQuery, updateSettings } from "@/lib/api";
@@ -26,7 +34,10 @@ export const Route = createFileRoute("/_authenticated/settings")({
           "Configure school details, academic year, per-student meal quantities, budget and cost rates.",
       },
       { property: "og:title", content: "Settings — Mid-Day Meal Manager" },
-      { property: "og:description", content: "School profile and mid-day meal rate configuration." },
+      {
+        property: "og:description",
+        content: "School profile and mid-day meal rate configuration.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -127,32 +138,53 @@ function SettingsPage() {
             <h2 className="text-sm font-semibold">School profile</h2>
             <p className="mb-3 text-xs text-muted-foreground">Appears on every exported report.</p>
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField control={form.control} name="school_name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>School name</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="academic_year" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Academic year</FormLabel>
-                  <FormControl><Input placeholder="2025-2026" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <FormField
+                control={form.control}
+                name="school_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>School name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="academic_year"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Academic year</FormLabel>
+                    <FormControl>
+                      <Input placeholder="2025-2026" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </Card>
 
           <Card className="p-5">
             <h2 className="text-sm font-semibold">Per-student meal quantities</h2>
             <p className="mb-3 text-xs text-muted-foreground">
-              Used to calculate the daily rice, dal and vegetable requirement from the attendance count.
+              Used to calculate the daily rice, dal and vegetable requirement from the attendance
+              count.
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
-              {numberField("rice_per_student_g", "Rice (grams)", "Government supply — quantity only, no cost")}
+              {numberField(
+                "rice_per_student_g",
+                "Rice (grams)",
+                "Government supply — quantity only, no cost",
+              )}
               {numberField("dal_per_student_g", "Dal (grams)", "Costed at the daily dal rate")}
-              {numberField("veg_per_student_g", "Vegetables (grams)", "Costed at the daily vegetable rate")}
+              {numberField(
+                "veg_per_student_g",
+                "Vegetables (grams)",
+                "Costed at the daily vegetable rate",
+              )}
             </div>
           </Card>
 
@@ -162,9 +194,24 @@ function SettingsPage() {
               Applied per present student when calculating daily expenditure and credits saved.
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
-              {numberField("budget_per_student", "Budget (₹)", "Sanctioned cooking cost per meal", "0.01")}
-              {numberField("masala_per_student", "Masala (₹)", "Fixed condiment cost per meal", "0.01")}
-              {numberField("fuel_per_student", "Fuel (₹)", "Fixed cooking fuel cost per meal", "0.01")}
+              {numberField(
+                "budget_per_student",
+                "Budget (₹)",
+                "Sanctioned cooking cost per meal",
+                "0.01",
+              )}
+              {numberField(
+                "masala_per_student",
+                "Masala (₹)",
+                "Fixed condiment cost per meal",
+                "0.01",
+              )}
+              {numberField(
+                "fuel_per_student",
+                "Fuel (₹)",
+                "Fixed cooking fuel cost per meal",
+                "0.01",
+              )}
             </div>
             <Separator className="my-4" />
             <Button type="submit" disabled={save.isPending} className="w-full sm:w-auto">
@@ -176,7 +223,9 @@ function SettingsPage() {
 
       <Card className="mt-4 p-5">
         <h2 className="text-sm font-semibold">Recent activity</h2>
-        <p className="mb-3 text-xs text-muted-foreground">The last actions recorded in this system.</p>
+        <p className="mb-3 text-xs text-muted-foreground">
+          The last actions recorded in this system.
+        </p>
         <ul className="divide-y divide-border text-sm">
           {(audit ?? []).slice(0, 12).map((a) => (
             <li key={a.id} className="flex items-center justify-between gap-3 py-2">
@@ -189,7 +238,9 @@ function SettingsPage() {
               </span>
             </li>
           ))}
-          {!audit?.length && <li className="py-2 text-muted-foreground">No activity recorded yet.</li>}
+          {!audit?.length && (
+            <li className="py-2 text-muted-foreground">No activity recorded yet.</li>
+          )}
         </ul>
       </Card>
     </>

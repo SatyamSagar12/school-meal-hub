@@ -4,12 +4,7 @@ export const genderEnum = z.enum(["male", "female", "other"]);
 export const statusEnum = z.enum(["active", "inactive", "transferred"]);
 
 const optionalText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, `Must be ${max} characters or fewer`)
-    .optional()
-    .or(z.literal(""));
+  z.string().trim().max(max, `Must be ${max} characters or fewer`).optional().or(z.literal(""));
 
 export const studentSchema = z.object({
   admission_no: z.string().trim().min(1, "Admission number is required").max(30),
