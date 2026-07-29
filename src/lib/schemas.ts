@@ -61,6 +61,16 @@ export const expenseSchema = z.object({
 });
 export type ExpenseFormValues = z.input<typeof expenseSchema>;
 
+export const classAttendanceSchema = z.object({
+  present_count: z.coerce.number().int("Enter a whole number").min(0, "Cannot be negative"),
+});
+export type ClassAttendanceFormValues = z.input<typeof classAttendanceSchema>;
+
+export const classRateSchema = z.object({
+  budget_per_student: z.coerce.number().min(0, "Cannot be negative").max(1000),
+});
+export type ClassRateFormValues = z.input<typeof classRateSchema>;
+
 export const settingsSchema = z.object({
   school_name: z.string().trim().min(2, "School name is required").max(150),
   academic_year: z

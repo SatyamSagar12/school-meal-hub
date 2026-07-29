@@ -29,7 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  attendanceRangeQuery,
+  attendanceTotalsRangeQuery,
+  classRatesQuery,
   dayStatsQuery,
   expenseByDateQuery,
   expensesMonthQuery,
@@ -37,6 +38,7 @@ import {
   studentsQuery,
 } from "@/lib/api";
 import {
+  computeBudget,
   computeMeal,
   currentMonthISO,
   inr,
@@ -136,8 +138,9 @@ function Dashboard() {
   const { data: todayExpense } = useQuery(expenseByDateQuery(today));
   const { data: monthExpenses, isLoading: loadingMonth } = useQuery(expensesMonthQuery(month));
   const { data: monthAttendance, isLoading: loadingTrend } = useQuery(
-    attendanceRangeQuery(start, end),
+    attendanceTotalsRangeQuery(start, end),
   );
+  const { data: rateOverrides } = useQuery(classRatesQuery());
 
   const rates = toRates(settings);
   const present = day?.present ?? 0;
@@ -148,17 +151,12 @@ function Dashboard() {
   const monthlyExpense = (monthExpenses ?? []).reduce((s, r) => s + num(r.total_expense), 0);
   const monthlyCredits = (monthExpenses ?? []).reduce((s, r) => s + num(r.credits_saved), 0);
 
-  const trend = Object.values(
-    (monthAttendance ?? []).reduce<
-      Record<string, { date: string; present: number; absent: number }>
-    >((acc, r) => {
-      const key = r.attendance_date;
-      acc[key] ??= { date: key.slice(8), present: 0, absent: 0 };
-      if (r.status === "present") acc[key].present += 1;
-      else acc[key].absent += 1;
-      return acc;
-    }, {}),
-  );
+  // Uses merged totals so days marked by class-wise quick count still appear.
+  const trend = (monthAttendance ?? []).map((d) => ({
+    date: d.date.slice(8),
+    present: d.present,
+    absent: d.absent,
+  }));
 
   const expenseSeries = (monthExpenses ?? []).map((r) => ({
     date: r.expense_date.slice(8),
@@ -168,7 +166,9 @@ function Dashboard() {
     credits: num(r.credits_saved),
   }));
 
-  const todayBudget = num(todayExpense?.budget) || present * rates.budget_per_student;
+  const todayBudget =
+    num(todayExpense?.budget) ||
+    computeBudget(day?.presentByClass ?? new Map(), rates, rateOverrides).totalBudget;
   const todayTotal = num(todayExpense?.total_expense);
   const todayCredits = todayExpense ? num(todayExpense.credits_saved) : 0;
 

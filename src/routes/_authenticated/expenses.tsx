@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  classRatesQuery,
   dayStatsQuery,
   deleteExpense,
   expenseByDateQuery,
@@ -41,7 +42,17 @@ import {
   saveExpense,
   settingsQuery,
 } from "@/lib/api";
-import { computeExpense, inr, kg, num, prettyDate, todayISO, toRates } from "@/lib/mdm";
+import {
+  classLabel,
+  computeBudget,
+  computeExpense,
+  inr,
+  kg,
+  num,
+  prettyDate,
+  todayISO,
+  toRates,
+} from "@/lib/mdm";
 import { expenseSchema, type ExpenseFormValues } from "@/lib/schemas";
 
 export const Route = createFileRoute("/_authenticated/expenses")({
@@ -84,9 +95,14 @@ function ExpensesPage() {
   const { data: settings } = useQuery(settingsQuery());
   const { data: day } = useQuery(dayStatsQuery(date));
   const { data: existing } = useQuery(expenseByDateQuery(date));
+  const { data: rateOverrides } = useQuery(classRatesQuery());
 
   const rates = toRates(settings);
   const present = day?.present ?? 0;
+
+  // Budget is the sum over classes of (present x that class's rate), so a
+  // class-level override is reflected here rather than one flat school rate.
+  const budgetBreakdown = computeBudget(day?.presentByClass ?? new Map(), rates, rateOverrides);
 
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
@@ -107,10 +123,13 @@ function ExpensesPage() {
     dalRate: Number(watched.dal_rate) || 0,
     vegRate: Number(watched.veg_rate) || 0,
     miscCost: Number(watched.misc_cost) || 0,
+    budget: budgetBreakdown.totalBudget,
   });
 
   const save = useMutation({
     mutationFn: async (v: ExpenseFormValues) => {
+      // `marked` counts classes resolved from either mode, so a day recorded
+      // only with class-wise quick counts passes this guard.
       if (!day?.marked) throw new Error("Mark attendance for this date before recording expenses");
       await saveExpense({
         expense_date: date,
@@ -181,7 +200,11 @@ function ExpensesPage() {
           label="Budget"
           value={inr(calc.budget)}
           icon={IndianRupee}
-          hint={`₹${rates.budget_per_student} per student`}
+          hint={
+            budgetBreakdown.perClass.length > 1
+              ? `${budgetBreakdown.perClass.length} classes`
+              : `₹${rates.budget_per_student} per student`
+          }
         />
         <StatCard
           label="Credits saved"
@@ -318,6 +341,22 @@ function ExpensesPage() {
           <Separator className="my-2" />
           <Line label="Total expenditure" value={inr(calc.totalExpense)} strong />
           <Line label="Sanctioned budget" value={inr(calc.budget)} strong />
+          {budgetBreakdown.perClass.length > 0 && (
+            <div className="mt-1 rounded-lg bg-muted/50 px-3 py-2">
+              <p className="mb-1 text-xs font-medium text-muted-foreground">Budget by class</p>
+              {budgetBreakdown.perClass.map((c) => (
+                <div
+                  key={c.key}
+                  className="flex items-center justify-between py-0.5 text-xs text-muted-foreground"
+                >
+                  <span>
+                    {classLabel(c.className, c.section)} — {c.present} × {inr(c.rate)}
+                  </span>
+                  <span className="tabular-nums">{inr(c.budget)}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <Separator className="my-2" />
           <div className="flex items-center justify-between rounded-xl bg-muted px-3 py-2.5">
             <span className="text-sm font-semibold">Credits saved</span>

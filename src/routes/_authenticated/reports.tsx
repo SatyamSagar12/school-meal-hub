@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { attendanceRangeQuery, expensesRangeQuery, settingsQuery } from "@/lib/api";
+import { attendanceTotalsRangeQuery, expensesRangeQuery, settingsQuery } from "@/lib/api";
 import { exportExcel, exportPdf } from "@/lib/export";
 import { currentMonthISO, inr, monthRange, num, prettyDate, round3, todayISO } from "@/lib/mdm";
 
@@ -60,7 +60,7 @@ function ReportsPage() {
 
   const { data: settings } = useQuery(settingsQuery());
   const { data: expenses, isLoading } = useQuery(expensesRangeQuery(range.start, range.end));
-  const { data: attendance } = useQuery(attendanceRangeQuery(range.start, range.end));
+  const { data: attendance } = useQuery(attendanceTotalsRangeQuery(range.start, range.end));
 
   const rows = expenses ?? [];
   const totals = rows.reduce(
@@ -76,10 +76,11 @@ function ReportsPage() {
     { present: 0, rice: 0, dal: 0, veg: 0, expense: 0, budget: 0, credits: 0 },
   );
 
+  // Merged per-day totals, so quick-count days are included in the percentage.
   const attendanceTotals = (attendance ?? []).reduce(
     (acc, r) => {
-      if (r.status === "present") acc.present += 1;
-      else acc.absent += 1;
+      acc.present += r.present;
+      acc.absent += r.absent;
       return acc;
     },
     { present: 0, absent: 0 },
