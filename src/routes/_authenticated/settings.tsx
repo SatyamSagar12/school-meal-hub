@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Save, ShieldCheck } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
@@ -20,8 +20,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { auditQuery, logAudit, meQuery, settingsQuery, updateSettings } from "@/lib/api";
-import { DEFAULT_SETTINGS, prettyDate } from "@/lib/mdm";
+import {
+  auditQuery,
+  classListQuery,
+  classRatesQuery,
+  deleteClassRate,
+  logAudit,
+  meQuery,
+  settingsQuery,
+  updateSettings,
+  upsertClassRate,
+} from "@/lib/api";
+import { DEFAULT_SETTINGS, inr, prettyDate } from "@/lib/mdm";
 import { settingsSchema, type SettingsFormValues } from "@/lib/schemas";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -49,6 +59,21 @@ function SettingsPage() {
   const { data: me } = useQuery(meQuery());
   const { data: settings } = useQuery(settingsQuery());
   const { data: audit } = useQuery(auditQuery());
+  const { data: lists } = useQuery(classListQuery());
+  const { data: classRates } = useQuery(classRatesQuery());
+
+  // Per-class override inputs, keyed by class name. Blank = use the default.
+  const [rateInputs, setRateInputs] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!lists) return;
+    const next: Record<string, string> = {};
+    for (const c of lists.classes) {
+      const override = (classRates ?? []).find((r) => r.class_name === c && r.section === "");
+      next[c] = override ? String(Number(override.budget_per_student)) : "";
+    }
+    setRateInputs(next);
+  }, [lists, classRates]);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -90,6 +115,32 @@ function SettingsPage() {
     onSuccess: () => {
       toast.success("Settings saved");
       qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const saveRates = useMutation({
+    mutationFn: async () => {
+      for (const [className, raw] of Object.entries(rateInputs)) {
+        const value = raw.trim();
+        if (value === "") {
+          // Cleared input means "fall back to the school-wide rate".
+          await deleteClassRate(className, "");
+          continue;
+        }
+        const n = Number(value);
+        if (!Number.isFinite(n) || n < 0) {
+          throw new Error(`Class ${className}: enter a valid rate`);
+        }
+        await upsertClassRate(className, "", n);
+      }
+      await logAudit("update", "class_rates", undefined, {
+        classes: Object.keys(rateInputs).length,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Class budget rates saved");
+      qc.invalidateQueries({ queryKey: ["classRates"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -197,7 +248,7 @@ function SettingsPage() {
               {numberField(
                 "budget_per_student",
                 "Budget (₹)",
-                "Sanctioned cooking cost per meal",
+                "Default sanctioned cooking cost per meal, used where a class has no override",
                 "0.01",
               )}
               {numberField(
@@ -220,6 +271,54 @@ function SettingsPage() {
           </Card>
         </form>
       </Form>
+
+      <Card className="mt-4 p-5">
+        <h2 className="text-sm font-semibold">Class-wise budget rates</h2>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Override the sanctioned cooking cost for individual classes. Leave a class blank to use
+          the default rate of{" "}
+          {inr(settings?.budget_per_student ?? DEFAULT_SETTINGS.budget_per_student)} per student.
+        </p>
+        {!lists?.classes.length ? (
+          <p className="py-2 text-sm text-muted-foreground">
+            No classes yet — add students before setting class rates.
+          </p>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {lists.classes.map((c) => (
+                <div key={c}>
+                  <label className="mb-1 block text-sm font-medium" htmlFor={`rate-${c}`}>
+                    Class {c}
+                  </label>
+                  <Input
+                    id={`rate-${c}`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    inputMode="decimal"
+                    placeholder={String(
+                      settings?.budget_per_student ?? DEFAULT_SETTINGS.budget_per_student,
+                    )}
+                    value={rateInputs[c] ?? ""}
+                    onChange={(e) => setRateInputs((m) => ({ ...m, [c]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+            <Separator className="my-4" />
+            <Button
+              type="button"
+              onClick={() => saveRates.mutate()}
+              disabled={saveRates.isPending}
+              className="w-full sm:w-auto"
+            >
+              <Save className="mr-1.5 size-4" />
+              {saveRates.isPending ? "Saving…" : "Save class rates"}
+            </Button>
+          </>
+        )}
+      </Card>
 
       <Card className="mt-4 p-5">
         <h2 className="text-sm font-semibold">Recent activity</h2>

@@ -3,6 +3,8 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Settings = Tables<"settings">;
 export type Student = Tables<"students">;
 export type Attendance = Tables<"attendance">;
+export type ClassAttendance = Tables<"class_attendance">;
+export type ClassRate = Tables<"class_rates">;
 export type DailyExpense = Tables<"daily_expenses">;
 
 export const DEFAULT_SETTINGS = {
@@ -52,10 +54,109 @@ export function computeMeal(present: number, rates: MealRates): MealQuantities {
   };
 }
 
+/* --------------------- class-wise attendance + budget -------------------- */
+
+/** Stable map key for a class/section pair, so lookups cannot drift. */
+export type ClassKey = string;
+
+export function classKey(className: string, section: string): ClassKey {
+  return `${className}|${section}`;
+}
+
+export function parseClassKey(key: ClassKey): { className: string; section: string } {
+  const [className, section = ""] = key.split("|");
+  return { className, section };
+}
+
+export function classLabel(className: string, section: string): string {
+  return section ? `${className}-${section}` : className;
+}
+
+/**
+ * Budget rate for one class: an exact class+section override wins, then a
+ * class-wide override (section ''), otherwise the school-wide rate.
+ */
+export function resolveClassRate(
+  className: string,
+  section: string,
+  rates: MealRates,
+  overrides?: ClassRate[] | null,
+): number {
+  const list = overrides ?? [];
+  const exact = list.find((o) => o.class_name === className && o.section === section);
+  if (exact) return Number(exact.budget_per_student);
+  const classWide = list.find((o) => o.class_name === className && o.section === "");
+  if (classWide) return Number(classWide.budget_per_student);
+  return rates.budget_per_student;
+}
+
+/**
+ * Merge the two attendance sources into one present-count per class.
+ *
+ * A saved quick count for a class is authoritative and completely replaces the
+ * per-student tally for that same class; classes without a quick count fall
+ * back to their per-student tally. This is the single place where that
+ * precedence is decided — every consumer must read the result rather than
+ * combining the two sources itself, or counts will be double-added.
+ */
+export function resolvePresentByClass(
+  quickCounts: Map<ClassKey, number>,
+  studentTally: Map<ClassKey, number>,
+): Map<ClassKey, number> {
+  const merged = new Map<ClassKey, number>(studentTally);
+  for (const [key, count] of quickCounts) merged.set(key, count);
+  return merged;
+}
+
+export interface ClassBudgetLine {
+  key: ClassKey;
+  className: string;
+  section: string;
+  present: number;
+  rate: number;
+  budget: number;
+}
+
+export interface BudgetBreakdown {
+  totalPresent: number;
+  totalBudget: number;
+  perClass: ClassBudgetLine[];
+}
+
+/** Day's budget as the sum over classes of (present in class x that class's rate). */
+export function computeBudget(
+  presentByClass: Map<ClassKey, number>,
+  rates: MealRates,
+  overrides?: ClassRate[] | null,
+): BudgetBreakdown {
+  const perClass: ClassBudgetLine[] = [];
+  let totalPresent = 0;
+  let totalBudget = 0;
+
+  for (const [key, present] of presentByClass) {
+    const { className, section } = parseClassKey(key);
+    const rate = resolveClassRate(className, section, rates, overrides);
+    const budget = round2(present * rate);
+    perClass.push({ key, className, section, present, rate, budget });
+    totalPresent += present;
+    totalBudget += budget;
+  }
+
+  perClass.sort(
+    (a, b) =>
+      a.className.localeCompare(b.className, undefined, { numeric: true }) ||
+      a.section.localeCompare(b.section),
+  );
+
+  return { totalPresent, totalBudget: round2(totalBudget), perClass };
+}
+
 export interface ExpenseInput {
   dalRate: number;
   vegRate: number;
   miscCost: number;
+  /** Precomputed per-class budget. Falls back to the flat rate when omitted. */
+  budget?: number;
 }
 
 export interface ExpenseBreakdown extends MealQuantities {
@@ -86,7 +187,8 @@ export function computeExpense(
   const fuelCost = round2(present * rates.fuel_per_student);
   const miscCost = round2(input.miscCost || 0);
   const totalExpense = round2(dalCost + vegCost + masalaCost + fuelCost + miscCost);
-  const budget = round2(present * rates.budget_per_student);
+  const budget =
+    input.budget === undefined ? round2(present * rates.budget_per_student) : round2(input.budget);
   return {
     ...meal,
     present,
