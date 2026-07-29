@@ -9,7 +9,7 @@ export const DEFAULT_SETTINGS = {
   rice_per_student_g: 100,
   dal_per_student_g: 20,
   veg_per_student_g: 50,
-  budget_per_student: 6.75,
+  budget_per_student: 6.78,
   masala_per_student: 1.2,
   fuel_per_student: 1,
 };
