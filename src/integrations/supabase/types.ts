@@ -88,6 +88,69 @@ export type Database = {
         }
         Relationships: []
       }
+      class_attendance: {
+        Row: {
+          attendance_date: string
+          class_name: string
+          created_at: string
+          enrolled_count: number
+          id: string
+          marked_by: string | null
+          present_count: number
+          section: string
+          updated_at: string
+        }
+        Insert: {
+          attendance_date: string
+          class_name: string
+          created_at?: string
+          enrolled_count?: number
+          id?: string
+          marked_by?: string | null
+          present_count?: number
+          section: string
+          updated_at?: string
+        }
+        Update: {
+          attendance_date?: string
+          class_name?: string
+          created_at?: string
+          enrolled_count?: number
+          id?: string
+          marked_by?: string | null
+          present_count?: number
+          section?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      class_rates: {
+        Row: {
+          budget_per_student: number
+          class_name: string
+          created_at: string
+          id: string
+          section: string
+          updated_at: string
+        }
+        Insert: {
+          budget_per_student: number
+          class_name: string
+          created_at?: string
+          id?: string
+          section?: string
+          updated_at?: string
+        }
+        Update: {
+          budget_per_student?: number
+          class_name?: string
+          created_at?: string
+          id?: string
+          section?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_expenses: {
         Row: {
           budget: number
