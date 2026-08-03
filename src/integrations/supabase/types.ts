@@ -159,6 +159,7 @@ export type Database = {
           credits_saved: number
           dal_cost: number
           dal_kg: number
+          dal_kg_upper: number
           dal_rate: number
           expense_date: string
           fuel_cost: number
@@ -167,11 +168,15 @@ export type Database = {
           misc_cost: number
           misc_note: string | null
           present_count: number
+          present_primary: number
+          present_upper: number
           rice_kg: number
+          rice_kg_upper: number
           total_expense: number
           updated_at: string
           veg_cost: number
           veg_kg: number
+          veg_kg_upper: number
           veg_rate: number
         }
         Insert: {
@@ -181,6 +186,7 @@ export type Database = {
           credits_saved?: number
           dal_cost?: number
           dal_kg?: number
+          dal_kg_upper?: number
           dal_rate?: number
           expense_date: string
           fuel_cost?: number
@@ -189,11 +195,15 @@ export type Database = {
           misc_cost?: number
           misc_note?: string | null
           present_count?: number
+          present_primary?: number
+          present_upper?: number
           rice_kg?: number
+          rice_kg_upper?: number
           total_expense?: number
           updated_at?: string
           veg_cost?: number
           veg_kg?: number
+          veg_kg_upper?: number
           veg_rate?: number
         }
         Update: {
@@ -203,6 +213,7 @@ export type Database = {
           credits_saved?: number
           dal_cost?: number
           dal_kg?: number
+          dal_kg_upper?: number
           dal_rate?: number
           expense_date?: string
           fuel_cost?: number
@@ -211,11 +222,15 @@ export type Database = {
           misc_cost?: number
           misc_note?: string | null
           present_count?: number
+          present_primary?: number
+          present_upper?: number
           rice_kg?: number
+          rice_kg_upper?: number
           total_expense?: number
           updated_at?: string
           veg_cost?: number
           veg_kg?: number
+          veg_kg_upper?: number
           veg_rate?: number
         }
         Relationships: []
@@ -248,44 +263,62 @@ export type Database = {
         Row: {
           academic_year: string
           budget_per_student: number
+          budget_per_student_upper: number
           created_at: string
           dal_per_student_g: number
+          dal_per_student_g_upper: number
           fuel_per_student: number
+          fuel_per_student_upper: number
           id: boolean
           logo_url: string | null
           masala_per_student: number
+          masala_per_student_upper: number
           rice_per_student_g: number
+          rice_per_student_g_upper: number
           school_name: string
           updated_at: string
           veg_per_student_g: number
+          veg_per_student_g_upper: number
         }
         Insert: {
           academic_year?: string
           budget_per_student?: number
+          budget_per_student_upper?: number
           created_at?: string
           dal_per_student_g?: number
+          dal_per_student_g_upper?: number
           fuel_per_student?: number
+          fuel_per_student_upper?: number
           id?: boolean
           logo_url?: string | null
           masala_per_student?: number
+          masala_per_student_upper?: number
           rice_per_student_g?: number
+          rice_per_student_g_upper?: number
           school_name?: string
           updated_at?: string
           veg_per_student_g?: number
+          veg_per_student_g_upper?: number
         }
         Update: {
           academic_year?: string
           budget_per_student?: number
+          budget_per_student_upper?: number
           created_at?: string
           dal_per_student_g?: number
+          dal_per_student_g_upper?: number
           fuel_per_student?: number
+          fuel_per_student_upper?: number
           id?: boolean
           logo_url?: string | null
           masala_per_student?: number
+          masala_per_student_upper?: number
           rice_per_student_g?: number
+          rice_per_student_g_upper?: number
           school_name?: string
           updated_at?: string
           veg_per_student_g?: number
+          veg_per_student_g_upper?: number
         }
         Relationships: []
       }
