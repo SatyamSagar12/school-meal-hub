@@ -50,6 +50,8 @@ import {
   kg,
   num,
   prettyDate,
+  TIER_LABEL,
+  TIERS,
   todayISO,
   toRates,
 } from "@/lib/mdm";
@@ -119,7 +121,7 @@ function ExpensesPage() {
   }, [existing, form]);
 
   const watched = form.watch();
-  const calc = computeExpense(present, rates, {
+  const calc = computeExpense(day?.presentByClass ?? new Map(), rates, {
     dalRate: Number(watched.dal_rate) || 0,
     vegRate: Number(watched.veg_rate) || 0,
     miscCost: Number(watched.misc_cost) || 0,
@@ -134,9 +136,16 @@ function ExpensesPage() {
       await saveExpense({
         expense_date: date,
         present_count: present,
+        // Grand totals stay in the unsuffixed columns; the _upper columns carry
+        // the split so reports can show it without recomputing.
         rice_kg: calc.riceKg,
         dal_kg: calc.dalKg,
         veg_kg: calc.vegKg,
+        present_primary: calc.byTier.primary.present,
+        present_upper: calc.byTier.upper_primary.present,
+        rice_kg_upper: calc.byTier.upper_primary.riceKg,
+        dal_kg_upper: calc.byTier.upper_primary.dalKg,
+        veg_kg_upper: calc.byTier.upper_primary.vegKg,
         dal_rate: Number(v.dal_rate) || 0,
         veg_rate: Number(v.veg_rate) || 0,
         dal_cost: calc.dalCost,
@@ -203,7 +212,7 @@ function ExpensesPage() {
           hint={
             budgetBreakdown.perClass.length > 1
               ? `${budgetBreakdown.perClass.length} classes`
-              : `₹${rates.budget_per_student} per student`
+              : `₹${rates.primary.budget_per_student} per student`
           }
         />
         <StatCard
@@ -323,20 +332,28 @@ function ExpensesPage() {
         <Card className="p-5">
           <h2 className="text-sm font-semibold">Auto-calculated breakdown</h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            Based on {present} present students at {rates.rice_per_student_g} g rice,{" "}
-            {rates.dal_per_student_g} g dal and {rates.veg_per_student_g} g vegetables each.
+            Based on {present} present students, costed at each class's tier rates.
           </p>
+          {TIERS.filter((t) => calc.byTier[t].present > 0).map((t) => (
+            <div key={t} className="mb-2 rounded-lg bg-muted/50 px-3 py-2">
+              <p className="mb-1 text-xs font-medium">
+                {TIER_LABEL[t]} — {calc.byTier[t].present} present
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {rates[t].rice_per_student_g} g rice, {rates[t].dal_per_student_g} g dal,{" "}
+                {rates[t].veg_per_student_g} g vegetables each
+              </p>
+              <p className="mt-1 text-xs tabular-nums text-muted-foreground">
+                {kg(calc.byTier[t].riceKg)} rice · {kg(calc.byTier[t].dalKg)} dal ·{" "}
+                {kg(calc.byTier[t].vegKg)} veg
+              </p>
+            </div>
+          ))}
           <Line label="Rice quantity (no cost)" value={kg(calc.riceKg)} />
           <Line label={`Dal — ${kg(calc.dalKg)}`} value={inr(calc.dalCost)} />
           <Line label={`Vegetables — ${kg(calc.vegKg)}`} value={inr(calc.vegCost)} />
-          <Line
-            label={`Masala — ₹${rates.masala_per_student} × ${present}`}
-            value={inr(calc.masalaCost)}
-          />
-          <Line
-            label={`Fuel — ₹${rates.fuel_per_student} × ${present}`}
-            value={inr(calc.fuelCost)}
-          />
+          <Line label="Masala" value={inr(calc.masalaCost)} />
+          <Line label="Fuel" value={inr(calc.fuelCost)} />
           <Line label="Other costs" value={inr(calc.miscCost)} />
           <Separator className="my-2" />
           <Line label="Total expenditure" value={inr(calc.totalExpense)} strong />

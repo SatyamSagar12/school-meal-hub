@@ -31,8 +31,31 @@ import {
   updateSettings,
   upsertClassRate,
 } from "@/lib/api";
-import { DEFAULT_SETTINGS, inr, prettyDate } from "@/lib/mdm";
+import {
+  DEFAULT_SETTINGS,
+  inr,
+  prettyDate,
+  tierForClass,
+  TIER_LABEL,
+  TIERS,
+  toRates,
+  type Tier,
+} from "@/lib/mdm";
 import { settingsSchema, type SettingsFormValues } from "@/lib/schemas";
+
+/** Base rate field names, shared by both tiers. */
+type TierFieldBase =
+  | "rice_per_student_g"
+  | "dal_per_student_g"
+  | "veg_per_student_g"
+  | "budget_per_student"
+  | "masala_per_student"
+  | "fuel_per_student";
+
+/** Primary keeps the unsuffixed column names; upper primary is `*_upper`. */
+function tierField(tier: Tier, base: TierFieldBase): keyof SettingsFormValues {
+  return (tier === "upper_primary" ? `${base}_upper` : base) as keyof SettingsFormValues;
+}
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -80,7 +103,13 @@ function SettingsPage() {
     defaultValues: {
       school_name: "",
       academic_year: "",
-      ...DEFAULT_SETTINGS,
+      ...DEFAULT_SETTINGS.primary,
+      rice_per_student_g_upper: DEFAULT_SETTINGS.upper_primary.rice_per_student_g,
+      dal_per_student_g_upper: DEFAULT_SETTINGS.upper_primary.dal_per_student_g,
+      veg_per_student_g_upper: DEFAULT_SETTINGS.upper_primary.veg_per_student_g,
+      budget_per_student_upper: DEFAULT_SETTINGS.upper_primary.budget_per_student,
+      masala_per_student_upper: DEFAULT_SETTINGS.upper_primary.masala_per_student,
+      fuel_per_student_upper: DEFAULT_SETTINGS.upper_primary.fuel_per_student,
     },
   });
 
@@ -95,6 +124,12 @@ function SettingsPage() {
       budget_per_student: settings.budget_per_student,
       masala_per_student: settings.masala_per_student,
       fuel_per_student: settings.fuel_per_student,
+      rice_per_student_g_upper: settings.rice_per_student_g_upper,
+      dal_per_student_g_upper: settings.dal_per_student_g_upper,
+      veg_per_student_g_upper: settings.veg_per_student_g_upper,
+      budget_per_student_upper: settings.budget_per_student_upper,
+      masala_per_student_upper: settings.masala_per_student_upper,
+      fuel_per_student_upper: settings.fuel_per_student_upper,
     });
   }, [settings, form]);
 
@@ -109,6 +144,12 @@ function SettingsPage() {
         budget_per_student: Number(v.budget_per_student),
         masala_per_student: Number(v.masala_per_student),
         fuel_per_student: Number(v.fuel_per_student),
+        rice_per_student_g_upper: Number(v.rice_per_student_g_upper),
+        dal_per_student_g_upper: Number(v.dal_per_student_g_upper),
+        veg_per_student_g_upper: Number(v.veg_per_student_g_upper),
+        budget_per_student_upper: Number(v.budget_per_student_upper),
+        masala_per_student_upper: Number(v.masala_per_student_upper),
+        fuel_per_student_upper: Number(v.fuel_per_student_upper),
       });
       await logAudit("update", "settings", undefined, { school_name: v.school_name });
     },
@@ -219,50 +260,54 @@ function SettingsPage() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="text-sm font-semibold">Per-student meal quantities</h2>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Used to calculate the daily rice, dal and vegetable requirement from the attendance
-              count.
+            <h2 className="text-sm font-semibold">Class-wise meal quantities and rates</h2>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Classes 6, 7 and 8 use the upper primary rates; every other class — including
+              pre-primary names such as LKG — uses the primary rates. Quantities drive the daily
+              rice, dal and vegetable requirement; the rupee rates drive expenditure and credits
+              saved.
             </p>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {numberField(
-                "rice_per_student_g",
-                "Rice (grams)",
-                "Government supply — quantity only, no cost",
-              )}
-              {numberField("dal_per_student_g", "Dal (grams)", "Costed at the daily dal rate")}
-              {numberField(
-                "veg_per_student_g",
-                "Vegetables (grams)",
-                "Costed at the daily vegetable rate",
-              )}
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <h2 className="text-sm font-semibold">Cost and budget rates</h2>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Applied per present student when calculating daily expenditure and credits saved.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {numberField(
-                "budget_per_student",
-                "Budget (₹)",
-                "Default sanctioned cooking cost per meal, used where a class has no override",
-                "0.01",
-              )}
-              {numberField(
-                "masala_per_student",
-                "Masala (₹)",
-                "Fixed condiment cost per meal",
-                "0.01",
-              )}
-              {numberField(
-                "fuel_per_student",
-                "Fuel (₹)",
-                "Fixed cooking fuel cost per meal",
-                "0.01",
-              )}
+            <div className="grid gap-6 lg:grid-cols-2">
+              {TIERS.map((tier) => (
+                <div key={tier}>
+                  <h3 className="mb-3 text-sm font-medium">{TIER_LABEL[tier]}</h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {numberField(
+                      tierField(tier, "rice_per_student_g"),
+                      "Rice (grams)",
+                      "Government supply — quantity only, no cost",
+                    )}
+                    {numberField(
+                      tierField(tier, "dal_per_student_g"),
+                      "Dal (grams)",
+                      "Costed at the daily dal rate",
+                    )}
+                    {numberField(
+                      tierField(tier, "veg_per_student_g"),
+                      "Vegetables (grams)",
+                      "Costed at the daily vegetable rate",
+                    )}
+                    {numberField(
+                      tierField(tier, "budget_per_student"),
+                      "Budget (₹)",
+                      "Sanctioned cooking cost per meal, unless a class overrides it below",
+                      "0.01",
+                    )}
+                    {numberField(
+                      tierField(tier, "masala_per_student"),
+                      "Masala (₹)",
+                      "Fixed condiment cost per meal",
+                      "0.01",
+                    )}
+                    {numberField(
+                      tierField(tier, "fuel_per_student"),
+                      "Fuel (₹)",
+                      "Fixed cooking fuel cost per meal",
+                      "0.01",
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
             <Separator className="my-4" />
             <Button type="submit" disabled={save.isPending} className="w-full sm:w-auto">
@@ -273,11 +318,16 @@ function SettingsPage() {
       </Form>
 
       <Card className="mt-4 p-5">
-        <h2 className="text-sm font-semibold">Class-wise budget rates</h2>
+        <h2 className="text-sm font-semibold">Per-class budget override</h2>
         <p className="mb-3 text-xs text-muted-foreground">
-          Override the sanctioned cooking cost for individual classes. Leave a class blank to use
-          the default rate of{" "}
-          {inr(settings?.budget_per_student ?? DEFAULT_SETTINGS.budget_per_student)} per student.
+          Optional. Overrides the sanctioned cooking cost for one class, taking precedence over its
+          tier rate above. Leave a class blank to use its tier rate —{" "}
+          {inr(settings?.budget_per_student ?? DEFAULT_SETTINGS.primary.budget_per_student)} for
+          primary,{" "}
+          {inr(
+            settings?.budget_per_student_upper ?? DEFAULT_SETTINGS.upper_primary.budget_per_student,
+          )}{" "}
+          for upper primary. This affects the budget only, not meal quantities.
         </p>
         {!lists?.classes.length ? (
           <p className="py-2 text-sm text-muted-foreground">
@@ -286,25 +336,29 @@ function SettingsPage() {
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-3">
-              {lists.classes.map((c) => (
-                <div key={c}>
-                  <label className="mb-1 block text-sm font-medium" htmlFor={`rate-${c}`}>
-                    Class {c}
-                  </label>
-                  <Input
-                    id={`rate-${c}`}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    inputMode="decimal"
-                    placeholder={String(
-                      settings?.budget_per_student ?? DEFAULT_SETTINGS.budget_per_student,
-                    )}
-                    value={rateInputs[c] ?? ""}
-                    onChange={(e) => setRateInputs((m) => ({ ...m, [c]: e.target.value }))}
-                  />
-                </div>
-              ))}
+              {lists.classes.map((c) => {
+                const tier = tierForClass(c);
+                return (
+                  <div key={c}>
+                    <label className="mb-1 block text-sm font-medium" htmlFor={`rate-${c}`}>
+                      Class {c}{" "}
+                      <span className="font-normal text-muted-foreground">
+                        · {tier === "upper_primary" ? "upper primary" : "primary"}
+                      </span>
+                    </label>
+                    <Input
+                      id={`rate-${c}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder={String(toRates(settings)[tier].budget_per_student)}
+                      value={rateInputs[c] ?? ""}
+                      onChange={(e) => setRateInputs((m) => ({ ...m, [c]: e.target.value }))}
+                    />
+                  </div>
+                );
+              })}
             </div>
             <Separator className="my-4" />
             <Button

@@ -77,12 +77,20 @@ export const settingsSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{4}-\d{4}$/, "Use format 2025-2026"),
+  // Unsuffixed fields are the primary tier (classes 1-5).
   rice_per_student_g: z.coerce.number().min(0).max(2000),
   dal_per_student_g: z.coerce.number().min(0).max(2000),
   veg_per_student_g: z.coerce.number().min(0).max(2000),
   budget_per_student: z.coerce.number().min(0).max(1000),
   masala_per_student: z.coerce.number().min(0).max(1000),
   fuel_per_student: z.coerce.number().min(0).max(1000),
+  // Upper primary tier (classes 6-8).
+  rice_per_student_g_upper: z.coerce.number().min(0).max(2000),
+  dal_per_student_g_upper: z.coerce.number().min(0).max(2000),
+  veg_per_student_g_upper: z.coerce.number().min(0).max(2000),
+  budget_per_student_upper: z.coerce.number().min(0).max(1000),
+  masala_per_student_upper: z.coerce.number().min(0).max(1000),
+  fuel_per_student_upper: z.coerce.number().min(0).max(1000),
 });
 export type SettingsFormValues = z.input<typeof settingsSchema>;
 

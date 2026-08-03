@@ -66,15 +66,37 @@ function ReportsPage() {
   const totals = rows.reduce(
     (acc, r) => ({
       present: acc.present + num(r.present_count),
+      presentPrimary: acc.presentPrimary + num(r.present_primary),
+      presentUpper: acc.presentUpper + num(r.present_upper),
       rice: acc.rice + num(r.rice_kg),
       dal: acc.dal + num(r.dal_kg),
       veg: acc.veg + num(r.veg_kg),
+      riceUpper: acc.riceUpper + num(r.rice_kg_upper),
+      dalUpper: acc.dalUpper + num(r.dal_kg_upper),
+      vegUpper: acc.vegUpper + num(r.veg_kg_upper),
       expense: acc.expense + num(r.total_expense),
       budget: acc.budget + num(r.budget),
       credits: acc.credits + num(r.credits_saved),
     }),
-    { present: 0, rice: 0, dal: 0, veg: 0, expense: 0, budget: 0, credits: 0 },
+    {
+      present: 0,
+      presentPrimary: 0,
+      presentUpper: 0,
+      rice: 0,
+      dal: 0,
+      veg: 0,
+      riceUpper: 0,
+      dalUpper: 0,
+      vegUpper: 0,
+      expense: 0,
+      budget: 0,
+      credits: 0,
+    },
   );
+
+  // Rows saved before tiering carry no split; they were all costed at what is
+  // now the primary rate, so the upper columns are legitimately zero.
+  const hasUpperPrimary = totals.presentUpper > 0;
 
   // Merged per-day totals, so quick-count days are included in the percentage.
   const attendanceTotals = (attendance ?? []).reduce(
@@ -96,12 +118,16 @@ function ReportsPage() {
     mode === "daily" ? prettyDate(day) : `${prettyDate(range.start)} – ${prettyDate(range.end)}`;
   const fileName = `mdm-report-${range.start}-to-${range.end}`;
 
+  // The tier columns only earn their width once a school actually has upper
+  // primary classes; otherwise the report stays as it was.
   const columns = [
     "Date",
     "Present",
+    ...(hasUpperPrimary ? ["Present (P)", "Present (UP)"] : []),
     "Rice (kg)",
     "Dal (kg)",
     "Veg (kg)",
+    ...(hasUpperPrimary ? ["Rice UP (kg)", "Dal UP (kg)", "Veg UP (kg)"] : []),
     "Dal ₹",
     "Veg ₹",
     "Masala ₹",
@@ -115,9 +141,13 @@ function ReportsPage() {
   const tableRows = rows.map((r) => [
     r.expense_date,
     num(r.present_count),
+    ...(hasUpperPrimary ? [num(r.present_primary), num(r.present_upper)] : []),
     round3(num(r.rice_kg)),
     round3(num(r.dal_kg)),
     round3(num(r.veg_kg)),
+    ...(hasUpperPrimary
+      ? [round3(num(r.rice_kg_upper)), round3(num(r.dal_kg_upper)), round3(num(r.veg_kg_upper))]
+      : []),
     num(r.dal_cost),
     num(r.veg_cost),
     num(r.masala_cost),
@@ -149,6 +179,11 @@ function ReportsPage() {
       landscape: true,
       summary: [
         `Total present meals: ${totals.present}    Attendance: ${attendancePct}%`,
+        ...(hasUpperPrimary
+          ? [
+              `Primary (1-5): ${totals.presentPrimary} meals    Upper primary (6-8): ${totals.presentUpper} meals`,
+            ]
+          : []),
         `Rice: ${round3(totals.rice)} kg    Dal: ${round3(totals.dal)} kg    Vegetables: ${round3(totals.veg)} kg`,
         `Expenditure: ${inr(totals.expense)}    Budget: ${inr(totals.budget)}    Credits saved: ${inr(totals.credits)}`,
       ],
