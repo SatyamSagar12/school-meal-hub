@@ -40,7 +40,7 @@ import {
   classKey,
   classLabel,
   computeBudget,
-  computeMeal,
+  computeMealByTier,
   inr,
   kg,
   prettyDate,
@@ -168,7 +168,11 @@ function AttendancePage() {
   const present = budget.totalPresent;
   const totalEnrolled = (classRoster ?? []).reduce((a, c) => a + c.enrolled, 0);
   const absent = Math.max(0, totalEnrolled - present);
-  const meal = computeMeal(present, rates);
+  const mealByTier = useMemo(
+    () => computeMealByTier(presentByClass, rates),
+    [presentByClass, rates],
+  );
+  const meal = mealByTier.total;
   const alreadySaved =
     mode === "quick"
       ? (classRoster ?? []).some((c) => c.quickCount !== null)
@@ -273,7 +277,11 @@ function AttendancePage() {
           value={kg(meal.riceKg)}
           icon={CalendarDays}
           tone="info"
-          hint={`${meal.riceG} g`}
+          hint={
+            mealByTier.byTier.upper_primary.present > 0
+              ? `${mealByTier.byTier.primary.riceKg} kg primary + ${mealByTier.byTier.upper_primary.riceKg} kg upper`
+              : `${meal.riceG} g`
+          }
         />
         <StatCard
           label="Budget"

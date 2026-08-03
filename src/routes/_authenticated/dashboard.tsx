@@ -39,7 +39,7 @@ import {
 } from "@/lib/api";
 import {
   computeBudget,
-  computeMeal,
+  computeMealByTier,
   currentMonthISO,
   inr,
   monthRange,
@@ -144,7 +144,8 @@ function Dashboard() {
 
   const rates = toRates(settings);
   const present = day?.present ?? 0;
-  const meal = computeMeal(present, rates);
+  const mealByTier = computeMealByTier(day?.presentByClass ?? new Map(), rates);
+  const meal = mealByTier.total;
   const totalStudents = studentPage?.total ?? 0;
 
   const monthlyRice = (monthExpenses ?? []).reduce((s, r) => s + num(r.rice_kg), 0);
@@ -222,7 +223,11 @@ function Dashboard() {
           icon={Wheat}
           tone="info"
           loading={loadingDay}
-          hint={`${meal.riceG} g total`}
+          hint={
+            mealByTier.byTier.upper_primary.present > 0
+              ? `${mealByTier.byTier.primary.riceKg} kg primary + ${mealByTier.byTier.upper_primary.riceKg} kg upper`
+              : `${meal.riceG} g total`
+          }
         />
       </section>
 
@@ -237,7 +242,11 @@ function Dashboard() {
           label="Today's budget"
           value={inr(todayBudget)}
           icon={CalendarDays}
-          hint={`₹${rates.budget_per_student} × ${present}`}
+          hint={
+            mealByTier.byTier.upper_primary.present > 0
+              ? `${mealByTier.byTier.primary.present} primary + ${mealByTier.byTier.upper_primary.present} upper`
+              : `₹${rates.primary.budget_per_student} × ${present}`
+          }
         />
         <StatCard
           label="Today's credits saved"
