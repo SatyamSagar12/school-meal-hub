@@ -375,3 +375,114 @@ export function prettyDate(iso: string): string {
     year: "numeric",
   });
 }
+
+/* ---------------------- per-tier view of a saved row ---------------------- */
+
+/**
+ * Which slice of a saved day a report is showing. "combined" is the whole
+ * school — the grand totals exactly as they were saved.
+ */
+export type ReportScope = "combined" | Tier;
+
+export const REPORT_SCOPE_LABEL: Record<ReportScope, string> = {
+  combined: "Combined",
+  primary: "Primary (1–5)",
+  upper_primary: "Upper Primary (6–8)",
+};
+
+/** One day of a report, already narrowed to the selected scope. */
+export interface ScopedExpenseRow {
+  date: string;
+  present: number;
+  riceKg: number;
+  dalKg: number;
+  vegKg: number;
+  dalCost: number;
+  vegCost: number;
+  masalaCost: number;
+  fuelCost: number;
+  miscCost: number;
+  totalExpense: number;
+  budget: number;
+  creditsSaved: number;
+}
+
+/**
+ * Split a saved daily row into the requested tier.
+ *
+ * Quantities are exact: the `_upper` columns hold the upper-primary share and
+ * the unsuffixed columns are the grand total, so primary = total - upper.
+ *
+ * Rupee figures are not stored per tier, so they are apportioned:
+ *   - dal/veg were bought at one market rate for the combined kg, so each
+ *     tier owes its share of that kg;
+ *   - masala/fuel are per-student rates, so they follow the present split;
+ *   - budget and misc follow the present split too. Budget can carry
+ *     class-level overrides that this row no longer records, so a school using
+ *     those should read the combined report for the authoritative figure.
+ *
+ * Apportioning by share means the two tier reports always add back up to the
+ * combined one, which is the property that matters for reconciliation.
+ */
+export function scopeExpenseRow(r: DailyExpense, scope: ReportScope): ScopedExpenseRow {
+  const date = r.expense_date;
+  const present = num(r.present_count);
+  const riceKg = num(r.rice_kg);
+  const dalKg = num(r.dal_kg);
+  const vegKg = num(r.veg_kg);
+
+  if (scope === "combined") {
+    return {
+      date,
+      present,
+      riceKg: round3(riceKg),
+      dalKg: round3(dalKg),
+      vegKg: round3(vegKg),
+      dalCost: num(r.dal_cost),
+      vegCost: num(r.veg_cost),
+      masalaCost: num(r.masala_cost),
+      fuelCost: num(r.fuel_cost),
+      miscCost: num(r.misc_cost),
+      totalExpense: num(r.total_expense),
+      budget: num(r.budget),
+      creditsSaved: num(r.credits_saved),
+    };
+  }
+
+  const upper = scope === "upper_primary";
+  const presentUpper = num(r.present_upper);
+  const pick = (total: number, upperPart: number) => (upper ? upperPart : total - upperPart);
+
+  const tierPresent = pick(present, presentUpper);
+  const tierDalKg = pick(dalKg, num(r.dal_kg_upper));
+  const tierVegKg = pick(vegKg, num(r.veg_kg_upper));
+
+  // Guard against a zero denominator on a day with no attendance.
+  const presentShare = present > 0 ? tierPresent / present : 0;
+  const dalShare = dalKg > 0 ? tierDalKg / dalKg : 0;
+  const vegShare = vegKg > 0 ? tierVegKg / vegKg : 0;
+
+  const dalCost = round2(num(r.dal_cost) * dalShare);
+  const vegCost = round2(num(r.veg_cost) * vegShare);
+  const masalaCost = round2(num(r.masala_cost) * presentShare);
+  const fuelCost = round2(num(r.fuel_cost) * presentShare);
+  const miscCost = round2(num(r.misc_cost) * presentShare);
+  const budget = round2(num(r.budget) * presentShare);
+  const totalExpense = round2(dalCost + vegCost + masalaCost + fuelCost + miscCost);
+
+  return {
+    date,
+    present: tierPresent,
+    riceKg: round3(pick(riceKg, num(r.rice_kg_upper))),
+    dalKg: round3(tierDalKg),
+    vegKg: round3(tierVegKg),
+    dalCost,
+    vegCost,
+    masalaCost,
+    fuelCost,
+    miscCost,
+    totalExpense,
+    budget,
+    creditsSaved: round2(budget - totalExpense),
+  };
+}

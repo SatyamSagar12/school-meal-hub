@@ -20,7 +20,19 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { attendanceTotalsRangeQuery, expensesRangeQuery, settingsQuery } from "@/lib/api";
 import { exportExcel, exportPdf } from "@/lib/export";
-import { currentMonthISO, inr, monthRange, num, prettyDate, round3, todayISO } from "@/lib/mdm";
+import type { ReportScope } from "@/lib/mdm";
+import {
+  REPORT_SCOPE_LABEL,
+  currentMonthISO,
+  inr,
+  monthRange,
+  num,
+  prettyDate,
+  round2,
+  round3,
+  scopeExpenseRow,
+  todayISO,
+} from "@/lib/mdm";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -29,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/reports")({
       {
         name: "description",
         content:
-          "Generate daily, monthly and custom-range mid-day meal reports and export them to Excel or PDF.",
+          "Generate daily, monthly and custom-range mid-day meal reports for primary, upper primary or the whole school, and export them to Excel or PDF.",
       },
       { property: "og:title", content: "Reports — Mid-Day Meal Manager" },
       {
@@ -44,8 +56,18 @@ export const Route = createFileRoute("/_authenticated/reports")({
 
 type Mode = "daily" | "monthly" | "custom";
 
+const SCOPES: ReportScope[] = ["combined", "primary", "upper_primary"];
+
+/** Filename-safe suffix so the three scopes never overwrite each other. */
+const SCOPE_SLUG: Record<ReportScope, string> = {
+  combined: "combined",
+  primary: "primary",
+  upper_primary: "upper-primary",
+};
+
 function ReportsPage() {
   const [mode, setMode] = useState<Mode>("monthly");
+  const [scope, setScope] = useState<ReportScope>("combined");
   const [day, setDay] = useState(todayISO());
   const [month, setMonth] = useState(currentMonthISO());
   const [from, setFrom] = useState(monthRange(currentMonthISO()).start);
@@ -63,42 +85,41 @@ function ReportsPage() {
   const { data: attendance } = useQuery(attendanceTotalsRangeQuery(range.start, range.end));
 
   const rows = expenses ?? [];
-  const totals = rows.reduce(
+
+  // Every figure below reads the scoped view, so switching scope re-reports the
+  // same days as primary-only, upper-primary-only or the whole school.
+  const scoped = rows.map((r) => scopeExpenseRow(r, scope));
+
+  const totals = scoped.reduce(
     (acc, r) => ({
-      present: acc.present + num(r.present_count),
-      presentPrimary: acc.presentPrimary + num(r.present_primary),
-      presentUpper: acc.presentUpper + num(r.present_upper),
-      rice: acc.rice + num(r.rice_kg),
-      dal: acc.dal + num(r.dal_kg),
-      veg: acc.veg + num(r.veg_kg),
-      riceUpper: acc.riceUpper + num(r.rice_kg_upper),
-      dalUpper: acc.dalUpper + num(r.dal_kg_upper),
-      vegUpper: acc.vegUpper + num(r.veg_kg_upper),
-      expense: acc.expense + num(r.total_expense),
-      budget: acc.budget + num(r.budget),
-      credits: acc.credits + num(r.credits_saved),
+      present: acc.present + r.present,
+      rice: acc.rice + r.riceKg,
+      dal: acc.dal + r.dalKg,
+      veg: acc.veg + r.vegKg,
+      expense: acc.expense + r.totalExpense,
+      budget: acc.budget + r.budget,
+      credits: acc.credits + r.creditsSaved,
     }),
-    {
-      present: 0,
-      presentPrimary: 0,
-      presentUpper: 0,
-      rice: 0,
-      dal: 0,
-      veg: 0,
-      riceUpper: 0,
-      dalUpper: 0,
-      vegUpper: 0,
-      expense: 0,
-      budget: 0,
-      credits: 0,
-    },
+    { present: 0, rice: 0, dal: 0, veg: 0, expense: 0, budget: 0, credits: 0 },
+  );
+
+  // The combined report keeps its per-tier columns; those split totals come from
+  // the saved rows rather than the scoped view, which has already collapsed them.
+  const tierTotals = rows.reduce(
+    (acc, r) => ({
+      presentPrimary: acc.presentPrimary + (num(r.present_count) - num(r.present_upper)),
+      presentUpper: acc.presentUpper + num(r.present_upper),
+    }),
+    { presentPrimary: 0, presentUpper: 0 },
   );
 
   // Rows saved before tiering carry no split; they were all costed at what is
   // now the primary rate, so the upper columns are legitimately zero.
-  const hasUpperPrimary = totals.presentUpper > 0;
+  const hasUpperPrimary = tierTotals.presentUpper > 0;
 
   // Merged per-day totals, so quick-count days are included in the percentage.
+  // Attendance is recorded school-wide, so the percentage stays a whole-school
+  // figure and is shown only on the combined report.
   const attendanceTotals = (attendance ?? []).reduce(
     (acc, r) => {
       acc.present += r.present;
@@ -114,20 +135,27 @@ function ReportsPage() {
         ) / 10
       : 0;
 
-  const label =
+  const scopeLabel = REPORT_SCOPE_LABEL[scope];
+  const periodLabel =
     mode === "daily" ? prettyDate(day) : `${prettyDate(range.start)} – ${prettyDate(range.end)}`;
-  const fileName = `mdm-report-${range.start}-to-${range.end}`;
+  const label = scope === "combined" ? periodLabel : `${scopeLabel} · ${periodLabel}`;
+  const fileName = `mdm-report-${SCOPE_SLUG[scope]}-${range.start}-to-${range.end}`;
 
-  // The tier columns only earn their width once a school actually has upper
-  // primary classes; otherwise the report stays as it was.
+  // The tier columns only earn their width on the combined report of a school
+  // that actually has upper primary classes; a scoped report is already one
+  // tier, so repeating the split there would be noise.
+  const showTierColumns = scope === "combined" && hasUpperPrimary;
+
   const columns = [
     "Date",
     "Present",
-    ...(hasUpperPrimary ? ["Present (P)", "Present (UP)"] : []),
+    ...(showTierColumns ? ["Present (LP)", "Present (UP)"] : []),
     "Rice (kg)",
     "Dal (kg)",
     "Veg (kg)",
-    ...(hasUpperPrimary ? ["Rice UP (kg)", "Dal UP (kg)", "Veg UP (kg)"] : []),
+    ...(showTierColumns
+      ? ["Rice LP (kg)", "Dal LP (kg)", "Veg LP (kg)", "Rice UP (kg)", "Dal UP (kg)", "Veg UP (kg)"]
+      : []),
     "Dal ₹",
     "Veg ₹",
     "Masala ₹",
@@ -138,57 +166,79 @@ function ReportsPage() {
     "Credits ₹",
   ];
 
-  const tableRows = rows.map((r) => [
-    r.expense_date,
-    num(r.present_count),
-    ...(hasUpperPrimary ? [num(r.present_primary), num(r.present_upper)] : []),
-    round3(num(r.rice_kg)),
-    round3(num(r.dal_kg)),
-    round3(num(r.veg_kg)),
-    ...(hasUpperPrimary
-      ? [round3(num(r.rice_kg_upper)), round3(num(r.dal_kg_upper)), round3(num(r.veg_kg_upper))]
-      : []),
-    num(r.dal_cost),
-    num(r.veg_cost),
-    num(r.masala_cost),
-    num(r.fuel_cost),
-    num(r.misc_cost),
-    num(r.total_expense),
-    num(r.budget),
-    num(r.credits_saved),
-  ]);
+  const tableRows = scoped.map((s, i) => {
+    const r = rows[i];
+    // Lower primary is whatever the day's grand total is not upper primary.
+    const lpPresent = num(r.present_count) - num(r.present_upper);
+    const lpRice = num(r.rice_kg) - num(r.rice_kg_upper);
+    const lpDal = num(r.dal_kg) - num(r.dal_kg_upper);
+    const lpVeg = num(r.veg_kg) - num(r.veg_kg_upper);
+    return [
+      s.date,
+      s.present,
+      ...(showTierColumns ? [lpPresent, num(r.present_upper)] : []),
+      round3(s.riceKg),
+      round3(s.dalKg),
+      round3(s.vegKg),
+      ...(showTierColumns
+        ? [
+            round3(lpRice),
+            round3(lpDal),
+            round3(lpVeg),
+            round3(num(r.rice_kg_upper)),
+            round3(num(r.dal_kg_upper)),
+            round3(num(r.veg_kg_upper)),
+          ]
+        : []),
+      s.dalCost,
+      s.vegCost,
+      s.masalaCost,
+      s.fuelCost,
+      s.miscCost,
+      s.totalExpense,
+      s.budget,
+      s.creditsSaved,
+    ];
+  });
 
   function handleExcel() {
-    if (!rows.length) return toast.error("There is no data in this range to export");
+    if (!tableRows.length) return toast.error("There is no data in this range to export");
     exportExcel(
       tableRows.map((r) => Object.fromEntries(columns.map((c, i) => [c, r[i]]))),
       fileName,
-      "MDM Report",
+      `${scopeLabel} report`,
     );
-    toast.success("Excel report downloaded");
+    toast.success(`${scopeLabel} Excel report downloaded`);
   }
 
   function handlePdf() {
-    if (!rows.length) return toast.error("There is no data in this range to export");
+    if (!tableRows.length) return toast.error("There is no data in this range to export");
     exportPdf({
       title: settings?.school_name ?? "Mid-Day Meal Report",
-      subtitle: `Mid-day meal report · ${label}`,
+      subtitle: `Mid-day meal report · ${scopeLabel} · ${periodLabel}`,
       columns,
       rows: tableRows,
       fileName,
       landscape: true,
       summary: [
-        `Total present meals: ${totals.present}    Attendance: ${attendancePct}%`,
-        ...(hasUpperPrimary
+        scope === "combined"
+          ? `Total present meals: ${totals.present}    Attendance: ${attendancePct}%`
+          : `${scopeLabel} meals served: ${totals.present}`,
+        ...(showTierColumns
           ? [
-              `Primary (1-5): ${totals.presentPrimary} meals    Upper primary (6-8): ${totals.presentUpper} meals`,
+              `Primary (1-5): ${tierTotals.presentPrimary} meals    Upper primary (6-8): ${tierTotals.presentUpper} meals`,
             ]
           : []),
         `Rice: ${round3(totals.rice)} kg    Dal: ${round3(totals.dal)} kg    Vegetables: ${round3(totals.veg)} kg`,
-        `Expenditure: ${inr(totals.expense)}    Budget: ${inr(totals.budget)}    Credits saved: ${inr(totals.credits)}`,
+        `Expenditure: ${inr(round2(totals.expense))}    Budget: ${inr(round2(totals.budget))}    Credits saved: ${inr(round2(totals.credits))}`,
+        ...(scope === "combined"
+          ? []
+          : [
+              "Note: dal and vegetable costs are apportioned by this tier's share of the day's quantity; masala, fuel, other and budget by its share of attendance.",
+            ]),
       ],
     });
-    toast.success("PDF report downloaded");
+    toast.success(`${scopeLabel} PDF report downloaded`);
   }
 
   return (
@@ -216,6 +266,19 @@ function ReportsPage() {
             <TabsTrigger value="custom">Custom range</TabsTrigger>
           </TabsList>
         </Tabs>
+
+        <div>
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Report for</span>
+          <Tabs value={scope} onValueChange={(v) => setScope(v as ReportScope)}>
+            <TabsList>
+              {SCOPES.map((s) => (
+                <TabsTrigger key={s} value={s}>
+                  {REPORT_SCOPE_LABEL[s]}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
 
         {mode === "daily" && (
           <div className="max-w-xs">
@@ -288,9 +351,13 @@ function ReportsPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Meals served"
+          label={scope === "combined" ? "Meals served" : `Meals served · ${scopeLabel}`}
           value={totals.present}
-          hint={`${attendancePct}% attendance`}
+          hint={
+            scope === "combined"
+              ? `${attendancePct}% attendance`
+              : `of ${tierTotals.presentPrimary + tierTotals.presentUpper} school-wide`
+          }
           loading={isLoading}
         />
         <StatCard
@@ -301,13 +368,13 @@ function ReportsPage() {
         />
         <StatCard
           label="Total expenditure"
-          value={inr(totals.expense)}
+          value={inr(round2(totals.expense))}
           loading={isLoading}
-          hint={`Budget ${inr(totals.budget)}`}
+          hint={`Budget ${inr(round2(totals.budget))}`}
         />
         <StatCard
           label="Credits saved"
-          value={inr(totals.credits)}
+          value={inr(round2(totals.credits))}
           tone={totals.credits >= 0 ? "success" : "danger"}
           loading={isLoading}
         />
@@ -360,6 +427,14 @@ function ReportsPage() {
           </Table>
         </div>
       </Card>
+
+      {scope !== "combined" && !isLoading && !!tableRows.length && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Quantities are exact per tier. Dal and vegetable costs are apportioned by this tier&apos;s
+          share of the day&apos;s quantity; masala, fuel, other and budget by its share of
+          attendance — so the two tier reports add back up to the combined one.
+        </p>
+      )}
     </>
   );
 }
