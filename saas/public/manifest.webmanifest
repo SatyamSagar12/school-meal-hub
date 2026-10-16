@@ -1,0 +1,9 @@
+{
+  "name": "School Meal Hub",
+  "short_name": "Meal Hub",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f3f1ea",
+  "theme_color": "#17352a",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

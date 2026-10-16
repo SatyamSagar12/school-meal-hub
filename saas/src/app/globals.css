@@ -1,0 +1,222 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: system-ui, -apple-system, Roboto, "Noto Sans", BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-serif: "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-heading: var(--font-serif);
+  --color-bronze: var(--bronze);
+  --color-ink: var(--ink);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-muted: var(--destructive-muted);
+}
+
+:root {
+  /*
+
+:root {
+  /*
+   * School Meal Hub palette: the Docchase structure (paper ground, one dark
+   * band for the sidebar, a single warm accent) recoloured for the product —
+   * a deep leaf green for the ink and turmeric as the accent.
+   */
+  --ink: #17352a;
+  --bronze: #a8640f;
+
+  --background: #f3f1ea;
+  --foreground: #0f1512;
+  --card: #fcfbf8;
+  --card-foreground: #0f1512;
+  --popover: #fcfbf8;
+  --popover-foreground: #0f1512;
+
+  --primary: #17352a;
+  --primary-foreground: #f4f1e8;
+  --secondary: #e4e1d6;
+  --secondary-foreground: #17352a;
+  --muted: #e6e3d9;
+  --muted-foreground: #5b5f58;
+  --accent: #f1e3c7;
+  --accent-foreground: #7a4a0c;
+
+  --destructive: #a3362b;
+  --destructive-foreground: #fcfbf8;
+  --destructive-muted: #f1dcd6;
+  --success: #2f6b45;
+  --success-foreground: #fcfbf8;
+  --success-muted: #d8e8d9;
+  --warning: #8a5a0b;
+  --warning-foreground: #fcfbf8;
+  --warning-muted: #f2e3c4;
+  --info: #31586b;
+  --info-foreground: #fcfbf8;
+  --info-muted: #d9e4e8;
+
+  --border: rgb(23 53 42 / 0.13);
+  --input: rgb(23 53 42 / 0.22);
+  --ring: #a8640f;
+
+  --chart-1: #17352a;
+  --chart-2: #2f6b45;
+  --chart-3: #c98a2b;
+  --chart-4: #a3362b;
+  --chart-5: #7a7f76;
+
+  --radius: 0.625rem;
+
+  --sidebar: #17352a;
+  --sidebar-foreground: #f4f1e8;
+  --sidebar-primary: #e6b45c;
+  --sidebar-primary-foreground: #17352a;
+  --sidebar-accent: rgb(244 241 232 / 0.09);
+  --sidebar-accent-foreground: #f4f1e8;
+  --sidebar-border: rgb(244 241 232 / 0.12);
+  --sidebar-ring: #e6b45c;
+  --sidebar-muted: #a8b5ad;
+}
+
+.dark {
+  --ink: #17352a;
+  --bronze: #e6b45c;
+
+  --background: #111a16;
+  --foreground: #f1efe7;
+  --card: #18241e;
+  --card-foreground: #f1efe7;
+  --popover: #1f2d26;
+  --popover-foreground: #f1efe7;
+
+  --primary: #f1efe7;
+  --primary-foreground: #17352a;
+  --secondary: #24342c;
+  --secondary-foreground: #f1efe7;
+  --muted: #22302a;
+  --muted-foreground: #a3ada6;
+  --accent: rgb(230 180 92 / 0.15);
+  --accent-foreground: #ecc77f;
+
+  --destructive: #e3907f;
+  --destructive-foreground: #17352a;
+  --destructive-muted: rgb(227 144 127 / 0.14);
+  --success: #8fc69d;
+  --success-foreground: #17352a;
+  --success-muted: rgb(143 198 157 / 0.13);
+  --warning: #dcb56f;
+  --warning-foreground: #17352a;
+  --warning-muted: rgb(220 181 111 / 0.14);
+  --info: #9cbccb;
+  --info-foreground: #17352a;
+  --info-muted: rgb(156 188 203 / 0.13);
+
+  --border: rgb(241 239 231 / 0.11);
+  --input: rgb(241 239 231 / 0.18);
+  --ring: #e6b45c;
+
+  --chart-1: #f1efe7;
+  --chart-2: #8fc69d;
+  --chart-3: #e6b45c;
+  --chart-4: #e3907f;
+  --chart-5: #97a096;
+
+  --sidebar: #0c1310;
+  --sidebar-foreground: #f1efe7;
+  --sidebar-primary: #e6b45c;
+  --sidebar-primary-foreground: #17352a;
+  --sidebar-accent: rgb(241 239 231 / 0.07);
+  --sidebar-accent-foreground: #f1efe7;
+  --sidebar-border: rgb(241 239 231 / 0.1);
+  --sidebar-ring: #e6b45c;
+  --sidebar-muted: #97a096;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+  /* System fonts: nothing to download on a school's mobile data. */
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+  }
+  th, td, time, [data-numeric] {
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+}
+
+@layer utilities {
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+}
+
+@media print {
+  aside, header, nav, [data-noprint] { display: none !important; }
+  main { padding: 0 !important; }
+}

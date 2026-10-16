@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "school-meal-hub",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // esbuild's keep_names wraps functions in __name(); next-themes serialises
+  // one into an inline <script>, where __name does not exist.
+  "keep_names": false,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "school-meal-hub" }
+  ],
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "school-meal-hub",
+      // `npx wrangler d1 create school-meal-hub --location apac`, then paste
+      // the id it prints here.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Non-secret settings. Secrets (SESSION_SECRET, TOKEN_SECRET, RESEND_API_KEY,
+  // PHONEPE_*, TURNSTILE_SECRET_KEY) go in with `wrangler secret put`, and
+  // in .dev.vars for local development.
+  "vars": {
+    "APP_NAME": "School Meal Hub",
+    "APP_URL": "https://school-meal-hub.example.workers.dev",
+    "SIGNUP_ENABLED": "true",
+    "PLATFORM_ADMIN_EMAILS": "",
+    "UPI_ID": "",
+    "UPI_PAYEE_NAME": "School Meal Hub",
+    "MAIL_FROM": "",
+    "SUPPORT_EMAIL": "",
+    "LEGAL_ENTITY_NAME": "",
+    "BUSINESS_ADDRESS": "",
+    "TURNSTILE_SITE_KEY": "",
+    "PHONEPE_ENV": "sandbox"
+  }
+}

@@ -1,0 +1,333 @@
+// School Meal Hub — multi-school SaaS on Cloudflare D1 (SQLite).
+//
+// Every tenant table carries `schoolId`; every service function takes it as
+// its first argument and puts it in every `where`. D1 has no row-level
+// security, so that discipline is the isolation boundary.
+//
+// Migrations are plain SQL in /migrations, applied by `wrangler d1 migrations
+// apply`. `npm run db:migration <name>` diffs this schema against the
+// migrations so far and writes the next file.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  runtime  = "cloudflare"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+}
+
+enum Plan {
+  TRIAL
+  SCHOOL
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+}
+
+enum PaymentProvider {
+  PHONEPE
+  MANUAL_UPI
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+/// The tenant. One school, its teachers, its registers.
+model School {
+  id           String  @id @default(cuid())
+  name         String
+  /// UDISE+ code, optional. Printed on reports when set.
+  udiseCode    String?
+  district     String?
+  state        String?
+  academicYear String
+
+  // Meal norms. Unsuffixed fields are the primary tier (classes 1-5); the
+  // `Upper` ones are upper primary (6-8).
+  ricePerStudentG       Float @default(100)
+  dalPerStudentG        Float @default(20)
+  vegPerStudentG        Float @default(50)
+  budgetPerStudent      Float @default(6.78)
+  masalaPerStudent      Float @default(1.2)
+  fuelPerStudent        Float @default(1)
+  ricePerStudentGUpper  Float @default(150)
+  dalPerStudentGUpper   Float @default(30)
+  vegPerStudentGUpper   Float @default(75)
+  budgetPerStudentUpper Float @default(10.17)
+  masalaPerStudentUpper Float @default(1.8)
+  fuelPerStudentUpper   Float @default(1.5)
+
+  // Billing: prepaid, nothing renews by itself (see services/billing.ts).
+  plan          Plan      @default(TRIAL)
+  trialEndsAt   DateTime?
+  paidUntil     DateTime?
+  /// Set only by hand (see README) — the operator's own school.
+  billingExempt Boolean   @default(false)
+  suspendedAt   DateTime?
+  suspendReason String?
+
+  termsVersion    String?
+  termsAcceptedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  students         Student[]
+  attendance       Attendance[]
+  classAttendance  ClassAttendance[]
+  classRates       ClassRate[]
+  dailyExpenses    DailyExpense[]
+  auditLogs        AuditLog[]
+  payments         Payment[]
+
+  @@map("schools")
+}
+
+model User {
+  id       String @id @default(cuid())
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  /// Unique across schools: sign-in has no school context.
+  email              String    @unique
+  passwordHash       String
+  name               String
+  role               Role      @default(TEACHER)
+  isActive           Boolean   @default(true)
+  /// Set when an admin created the account or reset its password.
+  mustChangePassword Boolean   @default(false)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  sessions    Session[]
+  resetTokens PasswordResetToken[]
+
+  @@index([schoolId])
+  @@map("users")
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// HMAC of the cookie token. The raw token is never stored.
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Student {
+  id          String        @id @default(cuid())
+  schoolId    String
+  school      School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  admissionNo String
+  rollNo      String?
+  name        String
+  fatherName  String?
+  motherName  String?
+  gender      Gender        @default(MALE)
+  /// YYYY-MM-DD
+  dob         String?
+  className   String
+  section     String        @default("A")
+  mobile      String?
+  address     String?
+  status      StudentStatus @default(ACTIVE)
+  createdById String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  attendance Attendance[]
+
+  @@unique([schoolId, admissionNo])
+  @@index([schoolId, status, className, section])
+  @@map("students")
+}
+
+/// One student on one day. Dates are school-local calendar days, YYYY-MM-DD.
+model Attendance {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  date        String
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  className   String
+  section     String
+  present     Boolean  @default(true)
+  markedById  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([studentId, date])
+  @@index([schoolId, date])
+  @@map("attendance")
+}
+
+/// A head count for a whole class on one day. Overrides per-student marks
+/// for that class (see resolvePresentByClass).
+model ClassAttendance {
+  id            String   @id @default(cuid())
+  schoolId      String
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  date          String
+  className     String
+  section       String
+  presentCount  Int
+  enrolledCount Int
+  markedById    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([schoolId, date, className, section])
+  @@map("class_attendance")
+}
+
+/// Per-class budget override. section "" applies to the whole class.
+model ClassRate {
+  id               String   @id @default(cuid())
+  schoolId         String
+  school           School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  className        String
+  section          String   @default("")
+  budgetPerStudent Float
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([schoolId, className, section])
+  @@map("class_rates")
+}
+
+/// The day's cooking cost, saved with every figure already computed.
+/// Reports read these rows and never recompute. Unsuffixed quantities are
+/// the grand total; `Upper` columns carry the upper-primary share.
+model DailyExpense {
+  id             String   @id @default(cuid())
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  date           String
+  presentCount   Int      @default(0)
+  presentPrimary Int      @default(0)
+  presentUpper   Int      @default(0)
+  riceKg         Float    @default(0)
+  dalKg          Float    @default(0)
+  vegKg          Float    @default(0)
+  riceKgUpper    Float    @default(0)
+  dalKgUpper     Float    @default(0)
+  vegKgUpper     Float    @default(0)
+  dalRate        Float    @default(0)
+  vegRate        Float    @default(0)
+  dalCost        Float    @default(0)
+  vegCost        Float    @default(0)
+  masalaCost     Float    @default(0)
+  fuelCost       Float    @default(0)
+  miscCost       Float    @default(0)
+  miscNote       String?
+  totalExpense   Float    @default(0)
+  budget         Float    @default(0)
+  creditsSaved   Float    @default(0)
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([schoolId, date])
+  @@map("daily_expenses")
+}
+
+/// Append-only.
+model AuditLog {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userId    String?
+  userName  String?
+  action    String
+  entity    String
+  entityId  String?
+  /// JSON
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([schoolId, createdAt])
+  @@map("audit_logs")
+}
+
+model Payment {
+  id              String          @id @default(cuid())
+  /// Null once the school is deleted; the record itself is kept (tax law).
+  schoolId        String?
+  school          School?         @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  schoolName      String?
+  provider        PaymentProvider
+  status          PaymentStatus   @default(PENDING)
+  months          Int             @default(12)
+  /// Paise.
+  amountMinor     Int
+  currency        String          @default("INR")
+  merchantOrderId String          @unique
+  providerOrderId String?         @unique
+  /// UTR for UPI, transaction id for PhonePe.
+  providerRef     String?
+  createdById     String?
+  paidAt          DateTime?
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  note            String?
+  createdAt       DateTime        @default(now())
+
+  @@index([schoolId])
+  @@index([status, provider])
+  @@map("payments")
+}
+
+/// Fixed-window counters. Keys are hashed, so no email or IP is stored.
+model RateLimit {
+  key       String @id
+  count     Int
+  /// Epoch milliseconds. A plain integer, so the raw upsert in
+  /// lib/rate-limit.ts can compare it without date parsing.
+  resetAtMs Int
+
+  @@map("rate_limits")
+}

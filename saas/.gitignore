@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.open-next/
+.wrangler/
+src/generated/
+.dev.vars
+.migrate-scratch.db*
+*.tsbuildinfo
+next-env.d.ts
+cloudflare-env.d.ts

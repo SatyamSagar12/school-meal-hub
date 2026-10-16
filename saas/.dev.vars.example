@@ -1,0 +1,16 @@
+# Copy to .dev.vars for `next dev` / `npm run preview`. Never commit .dev.vars.
+APP_URL=http://localhost:3000
+SESSION_SECRET=replace-with-openssl-rand-base64-32-output
+TOKEN_SECRET=replace-with-another-openssl-rand-base64-32
+PLATFORM_ADMIN_EMAILS=you@example.com
+UPI_ID=yourname@okaxis
+# Optional
+RESEND_API_KEY=
+MAIL_FROM=
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+PHONEPE_CLIENT_ID=
+PHONEPE_CLIENT_SECRET=
+PHONEPE_CLIENT_VERSION=1
+PHONEPE_WEBHOOK_USERNAME=
+PHONEPE_WEBHOOK_PASSWORD=
