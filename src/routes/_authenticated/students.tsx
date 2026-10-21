@@ -240,25 +240,29 @@ function StudentsPage() {
   });
 
   async function handleExport() {
-    const all = await qc.fetchQuery(allStudentsQuery());
-    exportExcel(
-      all.map((s) => ({
-        admission_no: s.admission_no,
-        roll_no: s.roll_no,
-        name: s.name,
-        father_name: s.father_name,
-        mother_name: s.mother_name,
-        gender: s.gender,
-        dob: s.dob,
-        class_name: s.class_name,
-        section: s.section,
-        mobile: s.mobile,
-        address: s.address,
-        status: s.status,
-      })),
-      `students-${new Date().toISOString().slice(0, 10)}`,
-      "Students",
-    );
+    try {
+      const all = await qc.fetchQuery(allStudentsQuery());
+      await exportExcel(
+        all.map((s) => ({
+          admission_no: s.admission_no,
+          roll_no: s.roll_no,
+          name: s.name,
+          father_name: s.father_name,
+          mother_name: s.mother_name,
+          gender: s.gender,
+          dob: s.dob,
+          class_name: s.class_name,
+          section: s.section,
+          mobile: s.mobile,
+          address: s.address,
+          status: s.status,
+        })),
+        `students-${new Date().toISOString().slice(0, 10)}`,
+        "Students",
+      );
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Could not export students");
+    }
     toast.success("Excel file downloaded");
   }
 
@@ -315,7 +319,10 @@ function StudentsPage() {
         description={`${data?.total ?? 0} record${data?.total === 1 ? "" : "s"} matching your filters`}
         actions={
           <>
-            <Button variant="outline" onClick={downloadTemplate}>
+            <Button
+              variant="outline"
+              onClick={() => downloadTemplate().catch((e: Error) => toast.error(e.message))}
+            >
               <FileSpreadsheet className="mr-1.5 size-4" /> Template
             </Button>
             <Button

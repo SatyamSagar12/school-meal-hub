@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -12,8 +12,14 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { meQuery } from "@/lib/api";
+import { isNativeApp } from "@/lib/native";
 
 export const Route = createFileRoute("/")({
+  // The marketing page is for the website; the Android app opens on the dashboard
+  // (which sends signed-out users to the sign-in screen).
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && isNativeApp()) throw redirect({ to: "/dashboard" });
+  },
   head: () => ({
     meta: [
       { title: "Mid-Day Meal Manager — School MDM & Attendance System" },

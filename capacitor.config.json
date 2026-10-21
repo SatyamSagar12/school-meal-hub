@@ -1,0 +1,12 @@
+{
+  "appId": "com.satyamsagar.mdmmanager",
+  "appName": "MDM Manager",
+  "webDir": "dist/client",
+  "backgroundColor": "#2563eb",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "style": "DARK"
+    }
+  }
+}
