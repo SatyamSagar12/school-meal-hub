@@ -201,43 +201,51 @@ function ReportsPage() {
     ];
   });
 
-  function handleExcel() {
+  async function handleExcel() {
     if (!tableRows.length) return toast.error("There is no data in this range to export");
-    exportExcel(
-      tableRows.map((r) => Object.fromEntries(columns.map((c, i) => [c, r[i]]))),
-      fileName,
-      `${scopeLabel} report`,
-    );
+    try {
+      await exportExcel(
+        tableRows.map((r) => Object.fromEntries(columns.map((c, i) => [c, r[i]]))),
+        fileName,
+        `${scopeLabel} report`,
+      );
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Could not export the report");
+    }
     toast.success(`${scopeLabel} Excel report downloaded`);
   }
 
-  function handlePdf() {
+  async function handlePdf() {
     if (!tableRows.length) return toast.error("There is no data in this range to export");
-    exportPdf({
-      title: settings?.school_name ?? "Mid-Day Meal Report",
-      subtitle: `Mid-day meal report · ${scopeLabel} · ${periodLabel}`,
-      columns,
-      rows: tableRows,
-      fileName,
-      landscape: true,
-      summary: [
-        scope === "combined"
-          ? `Total present meals: ${totals.present}    Attendance: ${attendancePct}%`
-          : `${scopeLabel} meals served: ${totals.present}`,
-        ...(showTierColumns
-          ? [
-              `Primary (1-5): ${tierTotals.presentPrimary} meals    Upper primary (6-8): ${tierTotals.presentUpper} meals`,
-            ]
-          : []),
-        `Rice: ${round3(totals.rice)} kg    Dal: ${round3(totals.dal)} kg    Vegetables: ${round3(totals.veg)} kg`,
-        `Expenditure: ${inr(round2(totals.expense))}    Budget: ${inr(round2(totals.budget))}    Credits saved: ${inr(round2(totals.credits))}`,
-        ...(scope === "combined"
-          ? []
-          : [
-              "Note: dal and vegetable costs are apportioned by this tier's share of the day's quantity; masala, fuel, other and budget by its share of attendance.",
-            ]),
-      ],
-    });
+    try {
+      await exportPdf({
+        title: settings?.school_name ?? "Mid-Day Meal Report",
+        subtitle: `Mid-day meal report · ${scopeLabel} · ${periodLabel}`,
+        columns,
+        rows: tableRows,
+        fileName,
+        landscape: true,
+        summary: [
+          scope === "combined"
+            ? `Total present meals: ${totals.present}    Attendance: ${attendancePct}%`
+            : `${scopeLabel} meals served: ${totals.present}`,
+          ...(showTierColumns
+            ? [
+                `Primary (1-5): ${tierTotals.presentPrimary} meals    Upper primary (6-8): ${tierTotals.presentUpper} meals`,
+              ]
+            : []),
+          `Rice: ${round3(totals.rice)} kg    Dal: ${round3(totals.dal)} kg    Vegetables: ${round3(totals.veg)} kg`,
+          `Expenditure: ${inr(round2(totals.expense))}    Budget: ${inr(round2(totals.budget))}    Credits saved: ${inr(round2(totals.credits))}`,
+          ...(scope === "combined"
+            ? []
+            : [
+                "Note: dal and vegetable costs are apportioned by this tier's share of the day's quantity; masala, fuel, other and budget by its share of attendance.",
+              ]),
+        ],
+      });
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Could not export the report");
+    }
     toast.success(`${scopeLabel} PDF report downloaded`);
   }
 

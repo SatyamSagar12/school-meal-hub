@@ -31,7 +31,7 @@ const items = [
 ] as const;
 
 export function AppSidebar({ schoolName }: { schoolName: string }) {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
@@ -63,7 +63,12 @@ export function AppSidebar({ schoolName }: { schoolName: string }) {
                     isActive={pathname.startsWith(item.url)}
                     tooltip={item.title}
                   >
-                    <Link to={item.url} className="flex items-center gap-2">
+                    <Link
+                      to={item.url}
+                      className="flex items-center gap-2"
+                      // On phones the menu slides over the page; close it once a page is picked.
+                      onClick={() => isMobile && setOpenMobile(false)}
+                    >
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
                     </Link>

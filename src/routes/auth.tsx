@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { publicOrigin } from "@/lib/native";
 import { emailSchema, signInSchema, signUpSchema } from "@/lib/schemas";
 
 export const Route = createFileRoute("/auth")({
@@ -74,7 +75,7 @@ function AuthPage() {
       email: values.email,
       password: values.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${publicOrigin()}/dashboard`,
         data: { full_name: values.full_name },
       },
     });
@@ -87,7 +88,7 @@ function AuthPage() {
   async function onForgot(values: z.output<typeof emailSchema>) {
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${publicOrigin()}/reset-password`,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
