@@ -20,7 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://aphrzrfcwqwmuumqnfsz.supabase.co' }}
+      # Supabase traffic goes through our Cloudflare gateway (supabase-gateway/) because
+      # several Indian internet providers block *.supabase.co ("Failed to fetch").
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://school-meal-hub-api.pages.dev' }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_LfUOsnlbP8WXb7LmHbw55A_cbKOepBJ' }}
       VITE_SUPABASE_PROJECT_ID: ${{ vars.VITE_SUPABASE_PROJECT_ID || 'aphrzrfcwqwmuumqnfsz' }}
       NITRO_PRESET: cloudflare-pages
@@ -54,3 +56,8 @@ jobs:
       - name: Upload to Cloudflare Pages
         if: steps.secrets.outputs.ready == 'true'
         run: bunx wrangler@4.151.3 pages deploy dist --project-name school-meal-hub --branch main --commit-hash "$GITHUB_SHA"
+
+      - name: Update the Supabase gateway
+        if: steps.secrets.outputs.ready == 'true'
+        working-directory: supabase-gateway
+        run: bunx wrangler@4.151.3 pages deploy public --project-name school-meal-hub-api --branch main --commit-hash "$GITHUB_SHA"

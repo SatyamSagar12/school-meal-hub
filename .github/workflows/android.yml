@@ -22,7 +22,9 @@ jobs:
     env:
       # Public Supabase settings (the publishable key ships inside the website too).
       # Override them under Settings -> Secrets and variables -> Actions -> Variables.
-      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://aphrzrfcwqwmuumqnfsz.supabase.co' }}
+      # Supabase traffic goes through our Cloudflare gateway (supabase-gateway/) because
+      # several Indian internet providers block *.supabase.co ("Failed to fetch").
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://school-meal-hub-api.pages.dev' }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_LfUOsnlbP8WXb7LmHbw55A_cbKOepBJ' }}
       VITE_SUPABASE_PROJECT_ID: ${{ vars.VITE_SUPABASE_PROJECT_ID || 'aphrzrfcwqwmuumqnfsz' }}
       # Published website, used for links in sign-up and password-reset e-mails sent from the app.
